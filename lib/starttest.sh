@@ -19,8 +19,7 @@ starttest() {
 
   echo -en "\e[${fy};${fx}H$f"
   
-  makelist
-  randomize 1111
+  randomize $((_time*9))
   makeline
   setline
   _prompt=""
@@ -53,9 +52,16 @@ starttest() {
     elif [[ $key = " " ]]; then
       ((_clicks++))
       ((_oldstatus != 2)) && {
+        ((_badclicks++)) 
         setstatus 1
-        bads=$((${#_string} - _activelength))
-        ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
+        sl=${#_string}
+        cl=$((sl>$_activelength?sl:_activelength))
+        for ((i=0;i<cl;i++)); do
+          c1=${_string:$i:1} c2=${_activeword:$i:1}
+          [[ $c1 = $2 ]] || ((_badclicks++))
+        done
+        # bads=$((${#_string} - _activelength))
+        # ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
       }
       nextword
       continue
@@ -65,22 +71,26 @@ starttest() {
 
     ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
 
-    ts="$_string"
-    # hack to allow special chars in regex
-    [[ ${_string} =~ [][}{\(^$\\] ]] \
-      && ts=$(printf '%q' "$_string")
+    nextchar=${_activeword:$((${#_string}-1)):1}
 
     if [[ $_activeword = "$_string" ]]; then
       status=2
-    elif [[ "$_activeword" =~ ^${ts} ]]; then
+    elif [[ $key = "$nextchar" ]]; then
       status=3
+    elif [[ $key = $'\177' ]]; then
+      ts="$_string"
+      ((_badclicks++))
+      # hack to allow special chars in regex
+      [[ ${_string} =~ [][}{\(^$\\] ]] \
+        && ts=$(printf '%q' "$_string")
+      [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
     else # don't match
       status=1
     fi
 
     [[ $key = $'\177' ]] || {
-      ((clicks++))
-      ((status == 1)) && ((badclicks++))
+      ((_clicks++))
+      ((status == 1)) && ((_badclicks++))
     }
 
     ((status == _oldstatus)) || setstatus $status

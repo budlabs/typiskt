@@ -1,7 +1,11 @@
 #!/bin/bash
 
 makelist() {
-  mapfile -t wordlist < "$_dir/wordlists/english-advanced"
+  local list
+  list="$_dir/wordlists/${__o[corpus]:-english}"
+  [[ -f $list ]] || ERX "cannot find $list"
+  
+  mapfile -t wordlist < "$list"
 }
 
 

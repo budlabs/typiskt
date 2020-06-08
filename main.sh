@@ -2,7 +2,12 @@
 
 main() {
 
-  declare -i _height _width _maxW
+  _source="$(readlink -f "${BASH_SOURCE[0]}")"
+  _dir="${_source%/*}"
+
+  ((__o[list])) && listcorpuses
+
+  declare -i _height _width _maxW _difficulty
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus
   declare -i _restart=1 _clicks=0 _badclicks=0
@@ -14,9 +19,6 @@ main() {
 
   RANDOM=$(od -An -N3 -i /dev/random)
 
-  _source="$(readlink -f "${BASH_SOURCE[0]}")"
-  _dir="${_source%/*}"
- 
   initscreen
 
   declare -A pos
@@ -35,10 +37,18 @@ main() {
   _c[cnorm]=$(tput cnorm)
 
   : "${_time:=${__o[time]:-60}}"
-
-  mapfile -t specials < "$_dir/specials"
   
   blank=$(printf "%${_width}s" " ")
+
+  makelist
+  _difficulty=$(( __o[difficulty] < 1  ? 0 : 
+                  __o[difficulty] < 11 ? __o[difficulty] :
+                  __o[difficulty] > 10 ? 10 : 0 ))
+
+  ((_difficulty)) && {
+    mapfile -t specials < "$_dir/specials"
+    _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
+  }
 
   while : ; do
     while ((_restart)); do starttest ; done

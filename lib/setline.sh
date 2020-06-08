@@ -39,9 +39,9 @@ makeline() {
   while :; do
     w=${wordlist[${words[-1]}]}
 
-    [[ ${__o[difficulty]} =~ ^[0-9]+$ ]] && ((__o[difficulty]<11)) && {
+    ((_difficulty)) && {
 
-      j=$((RANDOM%((${#specials[@]} * (11-_o[difficulty]) )+4) ))
+      j=$((RANDOM%_difficulty ))
       if [[ -n ${specials[$j]} ]]; then
         w=${specials[$j]/W/$w}
       elif ((j == (${#specials[@]}+1) )); then
