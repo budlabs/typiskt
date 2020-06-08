@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.08.9
+typiskt - version: 2020.06.08.16
 updated: 2020-06-08 by budRich
 EOB
 }
@@ -15,7 +15,12 @@ EOB
 
 main() {
 
-  declare -i _height _width _maxW
+  _source="$(readlink -f "${BASH_SOURCE[0]}")"
+  _dir="${_source%/*}"
+
+  ((__o[list])) && listcorpuses
+
+  declare -i _height _width _maxW _difficulty
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus
   declare -i _restart=1 _clicks=0 _badclicks=0
@@ -27,13 +32,10 @@ main() {
 
   RANDOM=$(od -An -N3 -i /dev/random)
 
-  _source="$(readlink -f "${BASH_SOURCE[0]}")"
-  _dir="${_source%/*}"
- 
   initscreen
 
   declare -A pos
-  pos[pY]=$(( (_height/2) - 3))
+  pos[pY]=$(( (_height/2) - 2))
   pos[aY]=$(( pos[pY]+3 ))
   pos[aX]=$(( (_width/2) - (_maxW/2) ))
   pos[tY]=$(( pos[aY]+3 ))
@@ -48,10 +50,18 @@ main() {
   _c[cnorm]=$(tput cnorm)
 
   : "${_time:=${__o[time]:-60}}"
-
-  mapfile -t specials < "$_dir/specials"
   
   blank=$(printf "%${_width}s" " ")
+
+  makelist
+  _difficulty=$(( __o[difficulty] < 1  ? 0 : 
+                  __o[difficulty] < 11 ? __o[difficulty] :
+                  __o[difficulty] > 10 ? 10 : 0 ))
+
+  ((_difficulty)) && {
+    mapfile -t specials < "$_dir/specials"
+    _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
+  }
 
   while : ; do
     while ((_restart)); do starttest ; done
@@ -138,8 +148,17 @@ initscreen() {
   trap cleanup HUP TERM EXIT INT
 }
 
+listcorpuses() {
+  ls "$_dir/wordlists" >&2
+  exit
+}
+
 makelist() {
-  mapfile -t wordlist < "$_dir/wordlists/english-advanced"
+  local list
+  list="$_dir/wordlists/${__o[corpus]:-english}"
+  [[ -f $list ]] || ERX "cannot find $list"
+  
+  mapfile -t wordlist < "$list"
 }
 
 
@@ -181,24 +200,59 @@ randomize() {
 
 results() {
 
+  # --- (0 s left) ---
+  # CPS (chars per second): 5.9
+  # WPM (words per minute): 70.6
+  # Characters typed:       59 (59|0)
+  # Keys pressed:           59
+  # Accuracy:               100.0%
+  # Correct words:          12
+  # Wrong words:            0
+
+
   local key
 
-  declare -i clicksum
-  clicksum=$((_clicks-_badclicks))
-  read -r cpm wpm < <(echo $clicksum "$_time" | awk '{
-    wordsum=$1/5
-    tid=60/$2
-    print (tid * $1), (tid * wordsum)
-  }')
+  tput clear
 
-  echo -en "\e[0;0HCPM: ${cpm}\nWPM: $wpm"
+  # shellcheck disable=SC1004
+  cps=$(echo "$_badclicks" "$_clicks" "$_time" | awk '{
+
+    badclicks=$1
+    clicks=$2
+    time=$3
+    
+    clicksum=clicks-badclicks
+    if (clicksum < 1) {
+      wordsum=0
+      cps=0
+      wpm=0
+      accuracy=0
+    } else {
+      wordsum=clicksum/5
+      cps=clicksum/time
+      wpm=cps*12
+      accuracy=(100-(badclicks/clicksum)*100)
+    }
+    
+
+    printf("CPS (chars per second): %.1f\n", cps) > "/dev/stderr"
+    printf("WPM (words per minute): %.1f\n",wpm) > "/dev/stderr"
+    printf("Characters typed:       %d (%s%d%s|%s%d%s)\n",
+            clicksum, c2, clicks, cr, c1, badclicks, cr) > "/dev/stderr"
+    printf("Accuracy:               %d%%\n",accuracy) > "/dev/stderr"
+
+    printf("%.1f", wpm)
+
+  }' c1="${_c[f1]}" c2="${_c[f2]}" cr="${_c[res]}" )
+
+  echo -en "${_c[civis]}\e[8;0HCPSSSSS: ${cps}"
 
   while :; do
     IFS= read -rsn1 -t 0.007 key || continue
 
     case "$key" in
-      q ) break ;;
-      r ) _restart=1 ; break ;;
+      Q ) break ;;
+      R ) _restart=1 ; break ;;
     esac
     
   done
@@ -243,9 +297,9 @@ makeline() {
   while :; do
     w=${wordlist[${words[-1]}]}
 
-    [[ ${__o[difficulty]} =~ ^[0-9]+$ ]] && ((__o[difficulty]<11)) && {
+    ((_difficulty)) && {
 
-      j=$((RANDOM%((${#specials[@]} * (11-_o[difficulty]) )+4) ))
+      j=$((RANDOM%_difficulty ))
       if [[ -n ${specials[$j]} ]]; then
         w=${specials[$j]/W/$w}
       elif ((j == (${#specials[@]}+1) )); then
@@ -305,8 +359,7 @@ starttest() {
 
   echo -en "\e[${fy};${fx}H$f"
   
-  makelist
-  randomize 1111
+  randomize $((_time*9))
   makeline
   setline
   _prompt=""
@@ -339,9 +392,16 @@ starttest() {
     elif [[ $key = " " ]]; then
       ((_clicks++))
       ((_oldstatus != 2)) && {
+        ((_badclicks++)) 
         setstatus 1
-        bads=$((${#_string} - _activelength))
-        ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
+        sl=${#_string}
+        cl=$((sl>$_activelength?sl:_activelength))
+        for ((i=0;i<cl;i++)); do
+          c1=${_string:$i:1} c2=${_activeword:$i:1}
+          [[ $c1 = $2 ]] || ((_badclicks++))
+        done
+        # bads=$((${#_string} - _activelength))
+        # ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
       }
       nextword
       continue
@@ -351,22 +411,26 @@ starttest() {
 
     ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
 
-    ts="$_string"
-    # hack to allow special chars in regex
-    [[ ${_string} =~ [][}{\(^$\\] ]] \
-      && ts=$(printf '%q' "$_string")
+    nextchar=${_activeword:$((${#_string}-1)):1}
 
     if [[ $_activeword = "$_string" ]]; then
       status=2
-    elif [[ "$_activeword" =~ ^${ts} ]]; then
+    elif [[ $key = "$nextchar" ]]; then
       status=3
+    elif [[ $key = $'\177' ]]; then
+      ts="$_string"
+      ((_badclicks++))
+      # hack to allow special chars in regex
+      [[ ${_string} =~ [][}{\(^$\\] ]] \
+        && ts=$(printf '%q' "$_string")
+      [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
     else # don't match
       status=1
     fi
 
     [[ $key = $'\177' ]] || {
-      ((clicks++))
-      ((status == 1)) && ((badclicks++))
+      ((_clicks++))
+      ((status == 1)) && ((_badclicks++))
     }
 
     ((status == _oldstatus)) || setstatus $status
@@ -380,19 +444,15 @@ starttest() {
 timer() {
   declare -i m s t 
   local op=""
-
   t=$((_t-SECONDS))
+  ((lasttime==-1)) && t=$((_time))
   m=$(( t/60 ))
   s=$(( t%60 ))
 
-  # tput sc
-  # tput civis
   op+="${_c[civis]}${_c[sc]}"
   op+="\e[${pos[tY]};${pos[tX]}H$(printf '%02d:%02d' $m $s)"
   op+="${_c[cnorm]}${_c[rc]}"
   echo -en "$op"
-  # tput rc
-  # tput cnorm
 
   lasttime=$SECONDS
 
