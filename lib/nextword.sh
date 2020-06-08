@@ -1,14 +1,19 @@
-nextword() {
-  ((activepos == lastpos)) && setline
+#!/bin/bash
 
-  activeword=${activeline[$nextpos]}
-  activelegnth=${#activeword}
-  activepos=$nextpos
-  nextpos=$(( activepos+(activelegnth+1) ))
+nextword() {
+
+  ((_activepos == _lastpos)) && setline
+
+  _activeword=${activeline[$_nextpos]}
+  _activelength=${#_activeword}
+  _activepos=$_nextpos
+  _nextpos=$(( _activepos+(_activelength+1) ))
   setstatus 3
 
-  prompt=""
-  string=""
+  _prompt=""
+  _string=""
+
+  # reset prompt
   echo -en "$op\e[${pos[pY]};0H${blank}\e[${pos[pY]};${pos[pX]}H"
 
 }

@@ -1,7 +1,12 @@
+#!/bin/bash
+
 initscreen() {
 
-  read -r height width < <(stty size)
-  _maxW=$((width<_maxW?width-2:_maxW))
+  read -r _height _width < <(stty size)
+
+  # max width, set with -w or default to width-2
+  : "${_maxW:=${__o[width]:-$_width}}"
+  _maxW=$(((_width-2)<_maxW?_width-2:_maxW))
 
   stty -echo
   tput smcup

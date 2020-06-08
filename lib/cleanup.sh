@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cleanup() {
   # clear out standard input
   read -rt 0.001 && cat </dev/stdin>/dev/null

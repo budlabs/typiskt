@@ -2,21 +2,19 @@
 
 starttest() {
 
-  declare -i start=0 lasttime=-1
-  clicks=0 badclicks=0 
+  local key ts
+  declare -i start=0 lasttime=-1 status
+  _clicks=0 _badclicks=0
 
-  pos[pY]=$(( (height/2) - 3))
-  pos[aY]=$(( pos[pY]+3 ))
-  pos[aX]=$(( (width/2) - (_maxW/2) ))
-  pos[tY]=$(( pos[aY]+3 ))
-  pos[tX]=$(( (width/2) - (5/2) ))
+  tput clear
 
   # prompt floor
-  local f fx fy fw=14
-  f=$(printf "%${fw}s" " ")
-  f=${f// /─}
-  fx=$(( (width/2) - (fw/2) ))
-  fy=$((pos[pY]+1))
+  local f 
+  declare -i fx fy
+  declare -i fw=14   # undeline width
+
+  f=$(printf "%${fw}s" " ")  f=${f// /─}
+  fx=$(( (_width/2) - (fw/2) )) fy=$((pos[pY]+1))
   pos[pX]=$((fx+1))
 
   echo -en "\e[${fy};${fx}H$f"
@@ -25,10 +23,12 @@ starttest() {
   randomize 1111
   makeline
   setline
-  prompt=""
+  _prompt=""
+  _string=""
 
   nextword
   timer
+
   while : ; do
 
     ((start)) && ((SECONDS>_t)) && break
@@ -39,22 +39,23 @@ starttest() {
 
     if [[ $key = $'\u1b' ]]; then
       read -rsn2 -t 0.001 && continue 
-      # echo -en "\e[0;0Hjajajaj"
+      # pressing escape will restart the game
+      # read above, to catch arrowkeys etc
       return
     # https://askubuntu.com/a/299469
     elif [[ $key = $'\177' ]]; then
-      ((${#string}<1)) && continue
-      prompt+=$'\b \b'
-      string=${string:0:-1}
+      ((${#_string}<1)) && continue
+      _prompt+=$'\b \b'
+      _string=${_string:0:-1}
     elif [[ $key =~ [[:graph:]] ]]; then
-      prompt+=$key
-      string+=$key
+      _prompt+=$key
+      _string+=$key
     elif [[ $key = " " ]]; then
-      ((clicks++))
-      ((oldstatus != 2)) && {
+      ((_clicks++))
+      ((_oldstatus != 2)) && {
         setstatus 1
-        bads=$((${#string} - activelegnth))
-        ((badclicks+=(bads<0 ? bads*-1 : bads) ))
+        bads=$((${#_string} - _activelength))
+        ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
       }
       nextword
       continue
@@ -64,14 +65,14 @@ starttest() {
 
     ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
 
-    ts="$string"
+    ts="$_string"
     # hack to allow special chars in regex
-    [[ ${string} =~ [][}{\(^$\\] ]] \
-      && ts=$(printf '%q' "$string")
+    [[ ${_string} =~ [][}{\(^$\\] ]] \
+      && ts=$(printf '%q' "$_string")
 
-    if [[ $activeword = "$string" ]]; then
+    if [[ $_activeword = "$_string" ]]; then
       status=2
-    elif [[ "$activeword" =~ ^${ts} ]]; then
+    elif [[ "$_activeword" =~ ^${ts} ]]; then
       status=3
     else # don't match
       status=1
@@ -82,10 +83,10 @@ starttest() {
       ((status == 1)) && ((badclicks++))
     }
 
-    ((status == oldstatus)) || setstatus $status
-    echo -en "\e[${pos[pY]};${pos[pX]}H${prompt}"
+    ((status == _oldstatus)) || setstatus $status
+    echo -en "\e[${pos[pY]};${pos[pX]}H${_prompt}"
 
   done
 
-  restart=0
+  _restart=0
 }

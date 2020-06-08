@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -E
 trap '[ "$?" -ne 77 ] || exit 77' ERR
 

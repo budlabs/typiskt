@@ -2,49 +2,50 @@
 
 main() {
 
-  declare -a wordlist nextline activeline
+  declare -i _height _width _maxW
+  declare -i _activepos _nextpos _lastpos
+  declare -i _time _t _oldstatus
+  declare -i _restart=1 _clicks=0 _badclicks=0
+
+  declare -a wordlist  # wordlist as array
+  declare -a words     # ${wordlist[${words[-1]}]}=next
+  declare -a specials  # specialsfile as array
+  declare -a nextline activeline
 
   RANDOM=$(od -An -N3 -i /dev/random)
 
-  declare -i height width
-
-  declare -i activepos nextpos lastpos _t
-  declare -i status oldstatus lasttime=-1
-  declare -i restart=1 clicks=0 badclicks=0 
-
-  declare -A pos
-
-  declare -i _maxW=50
-  declare -i _time=20
-
-  mapfile -t specials < "$___dir/specials"
-
+  _source="$(readlink -f "${BASH_SOURCE[0]}")"
+  _dir="${_source%/*}"
+ 
   initscreen
 
-  blank=$(printf "%${width}s" " ")
+  declare -A pos
+  pos[pY]=$(( (_height/2) - 2))
+  pos[aY]=$(( pos[pY]+3 ))
+  pos[aX]=$(( (_width/2) - (_maxW/2) ))
+  pos[tY]=$(( pos[aY]+3 ))
+  pos[tX]=$(( (_width/2) - (5/2) ))
 
   declare -A _c
-  for k in {1..6}; do _c[f$k]=$(tput setaf $k); done
+  for k in {0..7}; do _c[f$k]=$(tput setaf "$k"); done
   _c[res]=$(tput sgr0)
   _c[sc]=$(tput sc)
   _c[rc]=$(tput rc)
   _c[civis]=$(tput civis)
   _c[cnorm]=$(tput cnorm)
 
-  while ((restart)); do starttest ; done
+  : "${_time:=${__o[time]:-60}}"
 
-  clicksum=$((clicks-badclicks))
-  read -r cpm wpm < <(echo $clicksum $_time | awk '{
-    wordsum=$1/5
-    tid=60/$2
-    print (tid * $1), (tid * wordsum)
-  }')
-  # wordsum=$((clicksum/5))
+  mapfile -t specials < "$_dir/specials"
+  
+  blank=$(printf "%${_width}s" " ")
 
-  echo -en "\e[0;0H${cpm}\n$wpm"
-  sleep 3
-  read -rsn 1
+  while : ; do
+    while ((_restart)); do starttest ; done
 
+    results
+    ((_restart)) || break
+  done
 
 }
 
