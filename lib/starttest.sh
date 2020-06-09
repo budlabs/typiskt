@@ -79,7 +79,8 @@ starttest() {
       status=3
     elif [[ $key = $'\177' ]]; then
       ts="$_string"
-      ((_badclicks++))
+      # don't erase a good character
+      ((status == 1)) || ((_badclicks++))
       # hack to allow special chars in regex
       [[ ${_string} =~ [][}{\(^$\\] ]] \
         && ts=$(printf '%q' "$_string")
