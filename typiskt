@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.08.16
-updated: 2020-06-08 by budRich
+typiskt - version: 2020.06.10.0
+updated: 2020-06-10 by budRich
 EOB
 }
 
@@ -200,52 +200,50 @@ randomize() {
 
 results() {
 
-  # --- (0 s left) ---
-  # CPS (chars per second): 5.9
-  # WPM (words per minute): 70.6
-  # Characters typed:       59 (59|0)
-  # Keys pressed:           59
-  # Accuracy:               100.0%
-  # Correct words:          12
-  # Wrong words:            0
+  declare -i clicksum acc bh bw
 
+  clicksum=$((_clicks-_badclicks))
 
-  local key
+  local key block
 
   tput clear
+  tput civis
 
-  # shellcheck disable=SC1004
-  cps=$(echo "$_badclicks" "$_clicks" "$_time" | awk '{
+  # words per minute 2 point presicion
+  wpm=$(bc -l <<< "scale=1
+    ( (${clicksum}) / ${_time} )*12
+  ")
 
-    badclicks=$1
-    clicks=$2
-    time=$3
-    
-    clicksum=clicks-badclicks
-    if (clicksum < 1) {
-      wordsum=0
-      cps=0
-      wpm=0
-      accuracy=0
-    } else {
-      wordsum=clicksum/5
-      cps=clicksum/time
-      wpm=cps*12
-      accuracy=(100-(badclicks/clicksum)*100)
-    }
-    
+  # accuracy
+  acc=$((100-(_badclicks/clicksum)*100))
 
-    printf("CPS (chars per second): %.1f\n", cps) > "/dev/stderr"
-    printf("WPM (words per minute): %.1f\n",wpm) > "/dev/stderr"
-    printf("Characters typed:       %d (%s%d%s|%s%d%s)\n",
-            clicksum, c2, clicks, cr, c1, badclicks, cr) > "/dev/stderr"
-    printf("Accuracy:               %d%%\n",accuracy) > "/dev/stderr"
+  fglt=$(
+    figlet -f "DOS Rebel" "$(printf "%.0f" "$wpm")" \
+      | sed '/^[[:space:]]*$/ d'
+  )
 
-    printf("%.1f", wpm)
+  block=$(
+    printf '\n\n%-10s%-4s %s\n' "Speed:" "$wpm" "WPM"
+    printf '%-10s%-4s '         "Accuracy:" "$acc%"
+    echo -ne "(${_c[f2]}$clicksum${_c[res]}"
+    echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
+    echo '[R]estart'
+    echo '[Q]uit'
+  )
 
-  }' c1="${_c[f1]}" c2="${_c[f2]}" cr="${_c[res]}" )
+  bw=$(wc -L <<< "$fglt")
+  ((bw<=_maxW)) && block="${fglt}$block" || bw=$_maxW
+  bh=$(wc -l <<< "$block")
 
-  echo -en "${_c[civis]}\e[8;0HCPSSSSS: ${cps}"
+  # need separate count because hidden chars
+  # read -r bh bw < <(wc -lL <<< "$block")
+  by=$(( (pos[pY/2]) - (bh/2) ))
+  bx=$(( (_width/2) - (bw/2) ))
+  
+  # add intendation to center horizontally
+  bi=$(printf "%${bx}s" " ")
+  block=$(sed "s/^/${bi}/g" <<< "$block")
+  echo -en "\e[${by};0H${block}"
 
   while :; do
     IFS= read -rsn1 -t 0.007 key || continue
@@ -419,7 +417,8 @@ starttest() {
       status=3
     elif [[ $key = $'\177' ]]; then
       ts="$_string"
-      ((_badclicks++))
+      # don't erase a good character
+      ((status == 1)) || ((_badclicks++))
       # hack to allow special chars in regex
       [[ ${_string} =~ [][}{\(^$\\] ]] \
         && ts=$(printf '%q' "$_string")
