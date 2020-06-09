@@ -58,7 +58,7 @@ starttest() {
         cl=$((sl>$_activelength?sl:_activelength))
         for ((i=0;i<cl;i++)); do
           c1=${_string:$i:1} c2=${_activeword:$i:1}
-          [[ $c1 = c2 ]] || ((_badclicks++))
+          [[ $c1 = $c2 ]] || ((_badclicks++))
         done
         # bads=$((${#_string} - _activelength))
         # ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
