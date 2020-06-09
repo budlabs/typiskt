@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.10.0
+typiskt - version: 2020.06.10.1
 updated: 2020-06-10 by budRich
 EOB
 }
@@ -396,7 +396,7 @@ starttest() {
         cl=$((sl>$_activelength?sl:_activelength))
         for ((i=0;i<cl;i++)); do
           c1=${_string:$i:1} c2=${_activeword:$i:1}
-          [[ $c1 = $2 ]] || ((_badclicks++))
+          [[ $c1 = c2 ]] || ((_badclicks++))
         done
         # bads=$((${#_string} - _activelength))
         # ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
