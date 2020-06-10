@@ -14,6 +14,6 @@ nextword() {
   _string=""
 
   # reset prompt
-  echo -en "$op\e[${pos[pY]};0H${blank}\e[${pos[pY]};${pos[pX]}H"
+  op+="\e[${pos[pY]};0H${blank}\e[${pos[pY]};${pos[pX]}H"
 
 }
