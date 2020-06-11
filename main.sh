@@ -11,13 +11,15 @@ main() {
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus
   declare -i _restart=1 _clicks=0 _badclicks=0
+  declare -i _seed
 
   declare -a wordlist  # wordlist as array
   declare -a words     # ${wordlist[${words[-1]}]}=next
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
-  RANDOM=$(od -An -N3 -i /dev/random)
+  : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
+  RANDOM=$_seed
 
   initscreen
 

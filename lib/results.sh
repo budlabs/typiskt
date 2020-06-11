@@ -2,7 +2,7 @@
 
 results() {
 
-  declare -i clicksum bh bw
+  declare -i clicksum bh bw wpmb wpmr wpm
 
   clicksum=$((_clicks-_badclicks))
 
@@ -11,18 +11,16 @@ results() {
   tput clear
   tput civis
 
-  # words per minute 2 point presicion
   wpm=$(bc -l <<< "scale=2;(($clicksum)/$_time)*12")
-
-  # accuracy
+  wpmr=$(printf "%.0f" "$wpm")
+  wpmb=$(bc -l <<< "scale=3;${wpm}*1000") 
+  wpmb=$(printf "%.0f" "$wpmb")
   acc=$(bc -l <<< "scale=2; 100-(($_badclicks/$clicksum)*100)")
-
-  wpmrounded=$(printf "%.0f" "$wpm")
 
   # unset 'numfiles[@]'
   declare -a numfiles
-  for ((i=0;i<${#wpmrounded};i++)) ; do
-    fil="$_dir/DOSrebel/${wpmrounded:$i:1}"
+  for ((i=0;i<${#wpmr};i++)) ; do
+    fil="$_dir/DOSrebel/${wpmr:$i:1}"
     [[ -f $fil ]] && numfiles+=("$fil")
   done
 
@@ -43,7 +41,14 @@ results() {
   ((bw<=_maxW)) && block="$fglt$block" || bw=$_maxW
   bh=$(wc -l <<< "$block")
 
-  
+  if ((_time >= 60)); then
+    :
+    highscore $wpmb
+  else
+    :
+    # no high schore
+  fi
+
   by=$(( (_height/2) - (bh/2) ))
   bx=$(( (_width/2) -  (bw/2) ))
 

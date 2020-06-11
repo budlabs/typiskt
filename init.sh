@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.10.4
-updated: 2020-06-10 by budRich
+typiskt - version: 2020.06.11.0
+updated: 2020-06-11 by budRich
 EOB
 }
 
@@ -21,7 +21,7 @@ typiskt - touchtype training for dirt-hackers
 
 SYNOPSIS
 --------
-typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -36,6 +36,8 @@ OPTIONS
 --time|-t SECONDS  
 
 --width|-w WIDTH  
+
+--seed|-s INT  
 
 --list|-l  
 
@@ -56,8 +58,8 @@ done
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
-    --options "d:c:t:w:lhv" \
-    --longoptions "difficulty:,corpus:,time:,width:,list,help,version," \
+    --options "d:c:t:w:s:lhv" \
+    --longoptions "difficulty:,corpus:,time:,width:,seed:,list,help,version," \
     -- "$@" || exit 77
 )"
 
@@ -70,6 +72,7 @@ while true; do
     --corpus     | -c ) __o[corpus]="${2:-}" ; shift ;;
     --time       | -t ) __o[time]="${2:-}" ; shift ;;
     --width      | -w ) __o[width]="${2:-}" ; shift ;;
+    --seed       | -s ) __o[seed]="${2:-}" ; shift ;;
     --list       | -l ) __o[list]=1 ;; 
     --help       | -h ) ___printhelp && exit ;;
     --version    | -v ) ___printversion && exit ;;

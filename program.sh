@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.10.4
-updated: 2020-06-10 by budRich
+typiskt - version: 2020.06.11.0
+updated: 2020-06-11 by budRich
 EOB
 }
 
@@ -63,11 +63,9 @@ main() {
     _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
   }
 
-  while : ; do
+  while ((_restart)); do
     while ((_restart)); do starttest ; done
-
     results
-    ((_restart)) || break
   done
 
 }
@@ -80,7 +78,7 @@ typiskt - touchtype training for dirt-hackers
 
 SYNOPSIS
 --------
-typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -95,6 +93,8 @@ OPTIONS
 --time|-t SECONDS  
 
 --width|-w WIDTH  
+
+--seed|-s INT  
 
 --list|-l  
 
@@ -130,6 +130,42 @@ ERH(){
   ___printhelp >&2
   [[ -n "$*" ]] && printf '\n%s\n' "$*" >&2
   exit 77
+}
+
+hcat() {
+  awk '
+
+    BEGIN { id=0 }
+
+    FNR == 1 && FNR != NR {
+
+      lengths[id]+=lengths[last]+1
+      space=sprintf("%"lengths[id]"s"," ")
+      last = id ; id++
+
+      for (line in files[last]) {
+        files[id][line] = files[last][line] space
+      }
+
+    }
+
+    lengths[id] < length() {lengths[id]=length()}
+    id != 0 {
+      if (FNR in files[last])
+        r=sprintf("%-"lengths[last]"s",files[last][FNR])
+      else
+        r = space
+      sub(/^/,r)
+    }
+    {files[id][FNR] = $0}
+
+    END {
+      for (line in files[id]) {
+        print files[id][line]
+      }
+    }
+
+  ' "$@"
 }
 
 initscreen() {
@@ -215,49 +251,54 @@ results() {
   # accuracy
   acc=$(bc -l <<< "scale=2; 100-(($_badclicks/$clicksum)*100)")
 
-  fglt=$(
-    figlet -f "DOS Rebel" "$(printf "%.0f" "$wpm")" \
-      | sed '/^[[:space:]]*$/ d'
-  )
+  wpmrounded=$(printf "%.0f" "$wpm")
+
+  # unset 'numfiles[@]'
+  declare -a numfiles
+  for ((i=0;i<${#wpmrounded};i++)) ; do
+    fil="$_dir/DOSrebel/${wpmrounded:$i:1}"
+    [[ -f $fil ]] && numfiles+=("$fil")
+  done
+
+  fglt=$(hcat "${numfiles[@]}")
 
   block=$(
     printf '\n\n%10s %6.1f %s\n' "Speed:" "$wpm" "WPM"
     printf '%10s%6.1f%% '         "Accuracy:" "$acc"
     echo -ne "(${_c[f2]}$clicksum${_c[res]}"
     echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
+    echo
+    echo "press 'escape' to restart"
+    echo "      or 'Q' to quit"
   )
 
   # need separate count because hidden chars
-  # read -r bh bw < <(wc -lL <<< "$block")
   bw=$(wc -L <<< "$fglt")
-  ((bw<=_maxW)) && block="${fglt}$block" || bw=$_maxW
+  ((bw<=_maxW)) && block="$fglt$block" || bw=$_maxW
   bh=$(wc -l <<< "$block")
 
   
   by=$(( (_height/2) - (bh/2) ))
   bx=$(( (_width/2) -  (bw/2) ))
-  
+
   # add intendation to center horizontally
   bi=$(printf "%${bx}s" " ")
   block=$(sed "s/^/${bi}/g" <<< "$block")
+
   echo -en "\e[${by};0H${block}"
 
   while :; do
     IFS= read -rsn1 -t 0.007 key || continue
 
-    case "$key" in
-      Q ) break ;;
-      R ) _restart=1 ; break ;;
-    esac
-
-    [[ $key = $'\u1b' ]] && {
+    if [[ $key = $'\u1b' ]]; then
       read -rsn2 -t 0.001 && continue 
-      # pressing escape will restart the game
-      # read above, to catch arrowkeys etc
       _restart=1 ; break
-    }
-    
+    elif [[ $key = Q ]]; then
+      break
+    fi
+ 
   done
+  tput clear
 }
 
 setline() {
@@ -265,7 +306,7 @@ setline() {
   # call makeline to create new nextline
   # clear both old lines and print the two new ones
 
-  local k op=""
+  local k
 
   ((pos[aX])) && indent="$(printf "%${pos[aX]}s" " ")"
 
@@ -279,11 +320,10 @@ setline() {
   _nextpos=0
   makeline
 
-  op="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
   op+="$indent${nextline[*]}"
 
-  echo -en "$op"
 }
 
 makeline() {
@@ -329,16 +369,14 @@ makeline() {
 
 setstatus() {
 
-  # changes color of "activeword"
+  # changes color of "_activeword"
   # 1=red, 2=green, 3=yellow
 
   local style status=$1
 
   style="${_c[f$status]}${_activeword}${_c[res]}"
-  # tput civis
   op+="\e[${pos[aY]};$((_activepos+1+pos[aX]))H${style}"
   op+="\e[${pos[pY]};$((pos[pX]+${#_string}))H"
-  # tput cnorm
 
   _oldstatus=$status
 }
@@ -347,14 +385,14 @@ starttest() {
 
   local key ts
   declare -i start=0 lasttime=-1 status
-  _clicks=0 _badclicks=0
 
-  tput clear
+  _clicks=0  _badclicks=0
+  _prompt="" _string=""
 
   # prompt floor
   local f 
   declare -i fx fy
-  declare -i fw=14   # undeline width
+  declare -i fw=14   # floor width
 
   f=$(printf "%${fw}s" " ")  f=${f// /─}
   fx=$(( (_width/2) - (fw/2) )) fy=$((pos[pY]+1))
@@ -365,9 +403,6 @@ starttest() {
   randomize $((_time*9))
   makeline
   setline
-  _prompt=""
-  _string=""
-
   nextword
   timer
 
@@ -403,8 +438,8 @@ starttest() {
         && ts=$(printf '%q' "$_string")
       [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
 
-      # don't erase a good character
-      ((status == 1)) || ((_badclicks++))
+      # penalty for erasing good char
+      ((_oldstatus == 1)) || ((_badclicks++))
       
 
     # any graphical character
@@ -415,13 +450,14 @@ starttest() {
       ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
       nextchar=${_activeword:$((${#_string}-1)):1}
 
-      [[ $key = "$nextchar" ]] && status=3 || status=1
+      [[ $key = "$nextchar" ]] \
+        && status=$_oldstatus || status=1
 
       ((_clicks++))
       ((status == 1)) && ((_badclicks++))
 
-    # space submit word
-    elif [[ $key = " " ]]; then
+    # space, submit word (empty $key == Enter)
+    elif [[ $key = " " || -z $key ]]; then
       ((_clicks++))
       ((_oldstatus != 2)) && {
         ((_badclicks++)) 
@@ -451,17 +487,16 @@ starttest() {
 }
 
 timer() {
-  declare -i m s t 
-  # local op=""
-  t=$((_t-SECONDS))
-  ((lasttime==-1)) && t=$((_time))
-  m=$(( t/60 ))
-  s=$(( t%60 ))
+  declare -i m s remaining 
+
+  remaining=$((_t-SECONDS))
+  ((lasttime==-1)) && remaining=$((_time))
+  m=$(( remaining/60 ))
+  s=$(( remaining%60 ))
 
   op+="${_c[civis]}${_c[sc]}"
   op+="\e[${pos[tY]};${pos[tX]}H$(printf '%02d:%02d' $m $s)"
   op+="${_c[cnorm]}${_c[rc]}"
-  # echo -en "$op"
 
   lasttime=$SECONDS
 
@@ -470,8 +505,8 @@ timer() {
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
-    --options "d:c:t:w:lhv" \
-    --longoptions "difficulty:,corpus:,time:,width:,list,help,version," \
+    --options "d:c:t:w:s:lhv" \
+    --longoptions "difficulty:,corpus:,time:,width:,seed:,list,help,version," \
     -- "$@" || exit 77
 )"
 
@@ -484,6 +519,7 @@ while true; do
     --corpus     | -c ) __o[corpus]="${2:-}" ; shift ;;
     --time       | -t ) __o[time]="${2:-}" ; shift ;;
     --width      | -w ) __o[width]="${2:-}" ; shift ;;
+    --seed       | -s ) __o[seed]="${2:-}" ; shift ;;
     --list       | -l ) __o[list]=1 ;; 
     --help       | -h ) ___printhelp && exit ;;
     --version    | -v ) ___printversion && exit ;;

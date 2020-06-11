@@ -10,7 +10,7 @@ options
 -------
 
 ```text
-typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -24,6 +24,8 @@ typiskt --version|-v
 `--time`|`-t` SECONDS  
 
 `--width`|`-w` WIDTH  
+
+`--seed`|`-s` INT  
 
 `--list`|`-l`  
 
