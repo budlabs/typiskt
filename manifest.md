@@ -13,7 +13,7 @@ type:          default
 environ:
     XDG_CONFIG_HOME: $HOME/.config
 synopsis: |
-    [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+    [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
     --list|-l
     --help|-h
     --version|-v
