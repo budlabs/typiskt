@@ -17,7 +17,8 @@ main() {
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
-  RANDOM=$(od -An -N3 -i /dev/random)
+  RANDOM=666
+  # RANDOM=$(od -An -N3 -i /dev/random)
 
   initscreen
 
@@ -50,11 +51,9 @@ main() {
     _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
   }
 
-  while : ; do
+  while ((_restart)); do
     while ((_restart)); do starttest ; done
-
     results
-    ((_restart)) || break
   done
 
 }

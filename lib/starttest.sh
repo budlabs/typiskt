@@ -4,14 +4,14 @@ starttest() {
 
   local key ts
   declare -i start=0 lasttime=-1 status
-  _clicks=0 _badclicks=0
 
-  tput clear
+  _clicks=0  _badclicks=0
+  _prompt="" _string=""
 
   # prompt floor
   local f 
   declare -i fx fy
-  declare -i fw=14   # undeline width
+  declare -i fw=14   # floor width
 
   f=$(printf "%${fw}s" " ")  f=${f// /─}
   fx=$(( (_width/2) - (fw/2) )) fy=$((pos[pY]+1))
@@ -22,9 +22,6 @@ starttest() {
   randomize $((_time*9))
   makeline
   setline
-  _prompt=""
-  _string=""
-
   nextword
   timer
 
@@ -60,8 +57,8 @@ starttest() {
         && ts=$(printf '%q' "$_string")
       [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
 
-      # don't erase a good character
-      ((status == 1)) || ((_badclicks++))
+      # penalty for erasing good char
+      ((_oldstatus == 1)) || ((_badclicks++))
       
 
     # any graphical character
@@ -72,13 +69,14 @@ starttest() {
       ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
       nextchar=${_activeword:$((${#_string}-1)):1}
 
-      [[ $key = "$nextchar" ]] && status=3 || status=1
+      [[ $key = "$nextchar" ]] \
+        && status=$_oldstatus || status=1
 
       ((_clicks++))
       ((status == 1)) && ((_badclicks++))
 
-    # space submit word
-    elif [[ $key = " " ]]; then
+    # space, submit word (empty $key == Enter)
+    elif [[ $key = " " || -z $key ]]; then
       ((_clicks++))
       ((_oldstatus != 2)) && {
         ((_badclicks++)) 
