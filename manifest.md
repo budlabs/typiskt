@@ -23,3 +23,11 @@ synopsis: |
 
 https://github.com/rr-/10ff
 length
+
+### DOS Rebel
+
+The files in `./DOSrebel` are the integer glyphs from the `figlet(1)` font
+"DOS Rebel" by Valerie Mates, based on a font by Ron Bliss
+(who sometimes goes by the name "rebel" because his initials are REB).  
+
+I didn't want to add 'figlet' and/or the font as dependencies, instead there is a simple `hcat()` (*horizontal concatenation*) function included that emulates figlets good enough for printer numbers.

@@ -17,8 +17,7 @@ main() {
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
-  RANDOM=666
-  # RANDOM=$(od -An -N3 -i /dev/random)
+  RANDOM=$(od -An -N3 -i /dev/random)
 
   initscreen
 

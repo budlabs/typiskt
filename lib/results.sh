@@ -19,7 +19,8 @@ results() {
 
   wpmrounded=$(printf "%.0f" "$wpm")
 
-  unset 'numfiles[@]'
+  # unset 'numfiles[@]'
+  declare -a numfiles
   for ((i=0;i<${#wpmrounded};i++)) ; do
     fil="$_dir/DOSrebel/${wpmrounded:$i:1}"
     [[ -f $fil ]] && numfiles+=("$fil")
