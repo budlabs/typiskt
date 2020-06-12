@@ -43,6 +43,14 @@ ENVIRONMENT
 
 defaults to: $HOME/.config
 
+`TYPISKT_SCOREFILE`  
+
+defaults to: $HOME/.cache/typiskt/scorefile
+
+`TYPISKT_TIME_FORMAT`  
+
+defaults to: "%y/%m/%d"
+
 DEPENDENCIES
 ------------
 `bash`

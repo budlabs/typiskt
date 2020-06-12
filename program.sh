@@ -3,14 +3,16 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.11.0
-updated: 2020-06-11 by budRich
+typiskt - version: 2020.06.12.1
+updated: 2020-06-12 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${TYPISKT_SCOREFILE:=$HOME/.cache/typiskt/scorefile}"
+: "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 
 
 main() {
@@ -24,13 +26,15 @@ main() {
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus
   declare -i _restart=1 _clicks=0 _badclicks=0
+  declare -i _seed
 
   declare -a wordlist  # wordlist as array
   declare -a words     # ${wordlist[${words[-1]}]}=next
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
-  RANDOM=$(od -An -N3 -i /dev/random)
+  : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
+  RANDOM=$_seed
 
   initscreen
 
@@ -42,7 +46,10 @@ main() {
   pos[tX]=$(( (_width/2) - (5/2) ))
 
   declare -A _c
-  for k in {0..7}; do _c[f$k]=$(tput setaf "$k"); done
+  for k in {0..7}; do 
+    _c[f$k]=$(tput setaf "$k")
+    _c[b$k]=$(tput setab "$k")
+  done
   _c[res]=$(tput sgr0)
   _c[sc]=$(tput sc)
   _c[rc]=$(tput rc)
@@ -133,13 +140,18 @@ ERH(){
 }
 
 hcat() {
-  awk '
+
+  while getopts :s: o ; do 
+    [[ -n $o ]] && spacing=${OPTARG} ; shift 2
+  done
+
+  awk -v spacing="${spacing:-1}" '
 
     BEGIN { id=0 }
 
     FNR == 1 && FNR != NR {
 
-      lengths[id]+=lengths[last]+1
+      lengths[id]+=lengths[last]+spacing
       space=sprintf("%"lengths[id]"s"," ")
       last = id ; id++
 
@@ -167,6 +179,34 @@ hcat() {
 
   ' "$@"
 }
+
+highscore() {
+  local f=$TYPISKT_SCOREFILE tmp wpm=$1 score=$2
+  declare -i t=$EPOCHSECONDS i
+
+  [[ -n $f ]] && {
+
+    tmp=$(mktemp)
+
+    mkdir -p "${f%/*}"
+
+    echo "$score $wpm $t" >> "$f"
+    sort -n "$f" > "$tmp" && mv -f "$tmp" "$f"
+
+    mapfile -t tt < "$f"
+
+    local c ct cs
+    while ((${#tt[@]} && i++ <= 5)); do
+      c=${tt[-1]#* } ct=${c#* } cs=${c% *}
+      ((ct == t)) && echo -en "${_c[b2]}"
+      printf '%6.2f ' "$cs"
+      echo -n "$(date -d @"$ct" +"$TYPISKT_TIME_FORMAT")"
+      echo -e "${_c[res]} ▎"
+      unset 'tt[-1]'
+    done
+  }
+}
+# ▕   ▎ 
 
 initscreen() {
 
@@ -236,7 +276,7 @@ randomize() {
 
 results() {
 
-  declare -i clicksum bh bw
+  declare -i clicksum bh bw 
 
   clicksum=$((_clicks-_badclicks))
 
@@ -244,46 +284,58 @@ results() {
 
   tput clear
   tput civis
+# 093600
+  # 37 6  -- 73992
+  wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
+  acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
+  score=$(bc  <<< "$wpm*$acc")
 
-  # words per minute 2 point presicion
-  wpm=$(bc -l <<< "scale=2;(($clicksum)/$_time)*12")
-
-  # accuracy
-  acc=$(bc -l <<< "scale=2; 100-(($_badclicks/$clicksum)*100)")
-
-  wpmrounded=$(printf "%.0f" "$wpm")
+  notify-send "$score"
 
   # unset 'numfiles[@]'
-  declare -a numfiles
-  for ((i=0;i<${#wpmrounded};i++)) ; do
-    fil="$_dir/DOSrebel/${wpmrounded:$i:1}"
-    [[ -f $fil ]] && numfiles+=("$fil")
-  done
+  # wpmr=${wpm%$wpmd}
+  # declare -a numfiles
+  # for ((i=0;i<${#wpmr};i++)) ; do
+  #   fil="$_dir/DOSrebel/${wpmr:$i:1}"
+  #   [[ -f $fil ]] && numfiles+=("$fil")
+  # done
 
-  fglt=$(hcat "${numfiles[@]}")
+  # fglt=$(hcat "${numfiles[@]}")
 
   block=$(
-    printf '\n\n%10s %6.1f %s\n' "Speed:" "$wpm" "WPM"
-    printf '%10s%6.1f%% '         "Accuracy:" "$acc"
+    printf 'WPM:       %6.2f\n' "$wpm"
+    printf 'Accuracy: %6.1f%% ' "$acc"
     echo -ne "(${_c[f2]}$clicksum${_c[res]}"
     echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
     echo
     echo "press 'escape' to restart"
-    echo "      or 'Q' to quit"
+    echo "or 'Q' to quit"
   )
 
-  # need separate count because hidden chars
-  bw=$(wc -L <<< "$fglt")
-  ((bw<=_maxW)) && block="$fglt$block" || bw=$_maxW
-  bh=$(wc -l <<< "$block")
+  if ((_time >= 60)); then
+    :
+    highscore "$wpm"
+  else
+    block=$(hcat -s 1 <(highscore "$wpm" "$score") <(echo "$block"))
+    :
+    # no high schore
+  fi
 
-  
-  by=$(( (_height/2) - (bh/2) ))
+  bw=$(wc -L <<< "$block")
   bx=$(( (_width/2) -  (bw/2) ))
-
-  # add intendation to center horizontally
   bi=$(printf "%${bx}s" " ")
+
   block=$(sed "s/^/${bi}/g" <<< "$block")
+
+  # need separate count because hidden chars
+  bw=$(wc -L <<< "$fglt") 
+  bx=$(( (_width/2) -  (bw/2) ))
+  bi=$(printf "%${bx}s" " ")
+  fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
+  block="$block"
+
+  bh=$(wc -l <<< "$block")
+  by=$(( (_height/2) - (bh/2) ))
 
   echo -en "\e[${by};0H${block}"
 

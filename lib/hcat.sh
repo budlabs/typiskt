@@ -1,13 +1,18 @@
 #!/bin/bash
 
 hcat() {
-  awk '
+
+  while getopts :s: o ; do 
+    [[ -n $o ]] && spacing=${OPTARG} ; shift 2
+  done
+
+  awk -v spacing="${spacing:-1}" '
 
     BEGIN { id=0 }
 
     FNR == 1 && FNR != NR {
 
-      lengths[id]+=lengths[last]+1
+      lengths[id]+=spacing
       space=sprintf("%"lengths[id]"s"," ")
       last = id ; id++
 
@@ -17,7 +22,9 @@ hcat() {
 
     }
 
-    lengths[id] < length() {lengths[id]=length()}
+    lengths[id] < length(gensub(/[^[:print:]]/,"","g",$0)) {
+      lengths[id]=length(gensub(/[^[:print:]]/,"","g",$0))
+    }
     id != 0 {
       if (FNR in files[last])
         r=sprintf("%-"lengths[last]"s",files[last][FNR])

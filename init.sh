@@ -3,14 +3,16 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.11.0
-updated: 2020-06-11 by budRich
+typiskt - version: 2020.06.12.1
+updated: 2020-06-12 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${TYPISKT_SCOREFILE:=$HOME/.cache/typiskt/scorefile}"
+: "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 
 
 ___printhelp(){

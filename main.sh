@@ -31,7 +31,10 @@ main() {
   pos[tX]=$(( (_width/2) - (5/2) ))
 
   declare -A _c
-  for k in {0..7}; do _c[f$k]=$(tput setaf "$k"); done
+  for k in {0..7}; do 
+    _c[f$k]=$(tput setaf "$k")
+    _c[b$k]=$(tput setab "$k")
+  done
   _c[res]=$(tput sgr0)
   _c[sc]=$(tput sc)
   _c[rc]=$(tput rc)

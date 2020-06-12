@@ -2,7 +2,7 @@
 
 results() {
 
-  declare -i clicksum bh bw wpmb wpmr wpm
+  declare -i clicksum bh bw 
 
   clicksum=$((_clicks-_badclicks))
 
@@ -10,51 +10,62 @@ results() {
 
   tput clear
   tput civis
+# 093600
+  # 37 6  -- 73992
+  wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
+  acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
+  score=$(bc  <<< "$wpm*$acc")
 
-  wpm=$(bc -l <<< "scale=2;(($clicksum)/$_time)*12")
-  wpmr=$(printf "%.0f" "$wpm")
-  wpmb=$(bc -l <<< "scale=3;${wpm}*1000") 
-  wpmb=$(printf "%.0f" "$wpmb")
-  acc=$(bc -l <<< "scale=2; 100-(($_badclicks/$clicksum)*100)")
+  
 
   # unset 'numfiles[@]'
-  declare -a numfiles
-  for ((i=0;i<${#wpmr};i++)) ; do
-    fil="$_dir/DOSrebel/${wpmr:$i:1}"
-    [[ -f $fil ]] && numfiles+=("$fil")
-  done
+  # wpmr=${wpm%$wpmd}
+  # declare -a numfiles
+  # for ((i=0;i<${#wpmr};i++)) ; do
+  #   fil="$_dir/DOSrebel/${wpmr:$i:1}"
+  #   [[ -f $fil ]] && numfiles+=("$fil")
+  # done
 
-  fglt=$(hcat "${numfiles[@]}")
+  # fglt=$(hcat "${numfiles[@]}")
 
   block=$(
-    printf '\n\n%10s %6.1f %s\n' "Speed:" "$wpm" "WPM"
-    printf '%10s%6.1f%% '         "Accuracy:" "$acc"
+    printf 'WPM:       %6.2f\n' "$wpm"
+    printf 'Accuracy: %6.1f%% ' "$acc"
     echo -ne "(${_c[f2]}$clicksum${_c[res]}"
     echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
     echo
     echo "press 'escape' to restart"
-    echo "      or 'Q' to quit"
+    echo "or 'Q' to quit"
   )
-
-  # need separate count because hidden chars
-  bw=$(wc -L <<< "$fglt")
-  ((bw<=_maxW)) && block="$fglt$block" || bw=$_maxW
-  bh=$(wc -l <<< "$block")
 
   if ((_time >= 60)); then
     :
-    highscore $wpmb
+    highscore "$wpm"
   else
+    block=$(paste -d "" <(highscore "$wpm" "$score") - <<< "$block")
     :
     # no high schore
   fi
+ 
+  bw=$(wc -L <<< "${block}")
 
-  by=$(( (_height/2) - (bh/2) ))
-  bx=$(( (_width/2) -  (bw/2) ))
+  # wc -L "always" report 24 characters more...
+  declare -i magic=24
 
-  # add intendation to center horizontally
+  bx=$(( (_width/2) -  ((bw-magic)/2) ))
   bi=$(printf "%${bx}s" " ")
+
   block=$(sed "s/^/${bi}/g" <<< "$block")
+
+  # need separate count because hidden chars
+  bw=$(wc -L <<< "$fglt") 
+  bx=$(( (_width/2) -  (bw/2) ))
+  bi=$(printf "%${bx}s" " ")
+  fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
+  block="$block"
+
+  bh=$(wc -l <<< "$block")
+  by=$(( (_height/2) - (bh/2) ))
 
   echo -en "\e[${by};0H${block}"
 
