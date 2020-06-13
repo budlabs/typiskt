@@ -50,12 +50,15 @@ starttest() {
       _prompt+=$'\b \b'
       _string=${_string:0:-1}
 
-      ts="$_string"
+      # ts="$_string"
 
-      # hack to allow special chars in regex
-      [[ ${_string} =~ [][}{\(^$\\] ]] \
-        && ts=$(printf '%q' "$_string")
-      [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
+      # # hack to allow special chars in regex
+      # [[ ${_string} =~ [][}{\(^$\\] ]] \
+      #   && ts=$(printf '%q' "$_string")
+      # [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
+
+      [[ $_string = ${_activeword:0:${#_string}} ]] \
+        && status=3 || status=1
 
       # penalty for erasing good char
       ((_oldstatus == 1)) || ((_badclicks++))
