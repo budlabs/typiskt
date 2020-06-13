@@ -3,15 +3,15 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.12.1
-updated: 2020-06-12 by budRich
+typiskt - version: 2020.06.13.3
+updated: 2020-06-13 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
-: "${TYPISKT_SCOREFILE:=$HOME/.cache/typiskt/scorefile}"
+: "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 
 
@@ -24,6 +24,7 @@ typiskt - touchtype training for dirt-hackers
 SYNOPSIS
 --------
 typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -40,6 +41,8 @@ OPTIONS
 --width|-w WIDTH  
 
 --seed|-s INT  
+
+--book|-b BOOKWORDLIST  
 
 --list|-l  
 
@@ -60,8 +63,8 @@ done
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
-    --options "d:c:t:w:s:lhv" \
-    --longoptions "difficulty:,corpus:,time:,width:,seed:,list,help,version," \
+    --options "d:c:t:w:s:b:lhv" \
+    --longoptions "difficulty:,corpus:,time:,width:,seed:,book:,list,help,version," \
     -- "$@" || exit 77
 )"
 
@@ -75,6 +78,7 @@ while true; do
     --time       | -t ) __o[time]="${2:-}" ; shift ;;
     --width      | -w ) __o[width]="${2:-}" ; shift ;;
     --seed       | -s ) __o[seed]="${2:-}" ; shift ;;
+    --book       | -b ) __o[book]="${2:-}" ; shift ;;
     --list       | -l ) __o[list]=1 ;; 
     --help       | -h ) ___printhelp && exit ;;
     --version    | -v ) ___printversion && exit ;;

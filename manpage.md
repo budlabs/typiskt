@@ -4,6 +4,7 @@ SYNOPSIS
 --------
 ```text
 typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -27,6 +28,8 @@ OPTIONS
 
 `--seed`|`-s` INT  
 
+`--book`|`-b` BOOKWORDLIST  
+
 `--list`|`-l`  
 
 `--help`|`-h`  
@@ -43,9 +46,9 @@ ENVIRONMENT
 
 defaults to: $HOME/.config
 
-`TYPISKT_SCOREFILE`  
+`TYPISKT_CACHE`  
 
-defaults to: $HOME/.cache/typiskt/scorefile
+defaults to: $HOME/.cache/typiskt
 
 `TYPISKT_TIME_FORMAT`  
 

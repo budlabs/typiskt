@@ -4,12 +4,13 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
+  _bookmarkfile=""
 
   ((__o[list])) && listcorpuses
 
   declare -i _height _width _maxW _difficulty
   declare -i _activepos _nextpos _lastpos
-  declare -i _time _t _oldstatus
+  declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed
 

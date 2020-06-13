@@ -3,15 +3,15 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.12.1
-updated: 2020-06-12 by budRich
+typiskt - version: 2020.06.13.3
+updated: 2020-06-13 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
-: "${TYPISKT_SCOREFILE:=$HOME/.cache/typiskt/scorefile}"
+: "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 
 
@@ -19,12 +19,13 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
+  _bookmarkfile=""
 
   ((__o[list])) && listcorpuses
 
   declare -i _height _width _maxW _difficulty
   declare -i _activepos _nextpos _lastpos
-  declare -i _time _t _oldstatus
+  declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed
 
@@ -86,6 +87,7 @@ typiskt - touchtype training for dirt-hackers
 SYNOPSIS
 --------
 typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -102,6 +104,8 @@ OPTIONS
 --width|-w WIDTH  
 
 --seed|-s INT  
+
+--book|-b BOOKWORDLIST  
 
 --list|-l  
 
@@ -139,50 +143,9 @@ ERH(){
   exit 77
 }
 
-hcat() {
-
-  while getopts :s: o ; do 
-    [[ -n $o ]] && spacing=${OPTARG} ; shift 2
-  done
-
-  awk -v spacing="${spacing:-1}" '
-
-    BEGIN { id=0 }
-
-    FNR == 1 && FNR != NR {
-
-      lengths[id]+=lengths[last]+spacing
-      space=sprintf("%"lengths[id]"s"," ")
-      last = id ; id++
-
-      for (line in files[last]) {
-        files[id][line] = files[last][line] space
-      }
-
-    }
-
-    lengths[id] < length() {lengths[id]=length()}
-    id != 0 {
-      if (FNR in files[last])
-        r=sprintf("%-"lengths[last]"s",files[last][FNR])
-      else
-        r = space
-      sub(/^/,r)
-    }
-    {files[id][FNR] = $0}
-
-    END {
-      for (line in files[id]) {
-        print files[id][line]
-      }
-    }
-
-  ' "$@"
-}
-
 highscore() {
-  local f=$TYPISKT_SCOREFILE tmp wpm=$1 score=$2
-  declare -i t=$EPOCHSECONDS i
+  local f=$TYPISKT_CACHE/scorefile tmp wpm=$1 score=$2
+  declare -i t=$3 i
 
   [[ -n $f ]] && {
 
@@ -190,19 +153,26 @@ highscore() {
 
     mkdir -p "${f%/*}"
 
-    echo "$score $wpm $t" >> "$f"
-    sort -n "$f" > "$tmp" && mv -f "$tmp" "$f"
+    [[ -n $wpm ]] && {
+      echo "$score $wpm $t" >> "$f"
+      sort -rn "$f" > "$tmp" && mv -f "$tmp" "$f"
+    }
 
     mapfile -t tt < "$f"
+    local c ct cs dummy
+    dummy=" 100.99 $(date +"$TYPISKT_TIME_FORMAT")"
 
-    local c ct cs
-    while ((${#tt[@]} && i++ <= 5)); do
-      c=${tt[-1]#* } ct=${c#* } cs=${c% *}
-      ((ct == t)) && echo -en "${_c[b2]}"
-      printf '%6.2f ' "$cs"
-      echo -n "$(date -d @"$ct" +"$TYPISKT_TIME_FORMAT")"
-      echo -e "${_c[res]} ▎"
-      unset 'tt[-1]'
+    for ((i=0;i<7;i++)); do
+      if [[ -n ${tt[$i]} ]]; then
+        c=${tt[$i]#* } ct=${c#* } cs=${c% *}
+        ((ct == t)) && echo -en "*${_c[b2]}" || echo -n " "
+        printf '%6.2f ' "$cs"
+        echo -n "$(date -d @"$ct" +"$TYPISKT_TIME_FORMAT")"
+        ((ct == t)) && echo -ne "${_c[res]}"
+        echo "${_c[f4]}▕${_c[res]}"
+      else
+        echo "${dummy//[^[:space:]]/ }${_c[f4]}▕${_c[res]}"
+      fi
     done
   }
 }
@@ -230,11 +200,24 @@ listcorpuses() {
 }
 
 makelist() {
+
   local list
-  list="$_dir/wordlists/${__o[corpus]:-english}"
-  [[ -f $list ]] || ERX "cannot find $list"
-  
-  mapfile -t wordlist < "$list"
+
+  if [[ -n ${__o[book]} ]]; then
+    list="$_dir/text/${__o[book]}"
+    [[ -f $list ]] || ERX "cannot find $list"
+    mapfile -t wordlist < <(tac "$list")
+    _bookmark=$TYPISKT_CACHE/bookmarks/${__o[book]}
+    [[ -f $_bookmarkfile ]] && {
+      mkdir -p "${_bookmarkfile%/*}"
+      echo 0 > "$_bookmarkfile"
+    }
+  else
+    list="$_dir/wordlists/${__o[corpus]:-english}"
+    [[ -f $list ]] || ERX "cannot find $list"
+    mapfile -t wordlist < "$list"
+  fi
+ 
 }
 
 
@@ -263,15 +246,29 @@ randomize() {
   local n last next
 
   n=${1:-100}
-  declare -a nums
-  nums=("${!wordlist[@]}")
+  unset 'words[@]'
+  
 
-  for ((i=0; i<n; i++)); do
-    next=$((RANDOM%${#nums[@]}))
-    ((next == last)) && next=$((RANDOM%${#nums[@]}))
-    words+=("${nums[$next]}")
-    last=$next
-  done
+  if [[ -n ${__o[book]} ]]; then
+    # notify-send "$(sort -r < "$_list")"
+    [[ -f $_bookmarkfile ]] \
+      && _bookmark=$(cat "$_bookmarkfile")
+
+    ((n+=_bookmark))
+    while ((${#words[@]} < n)); do
+      eval "words=({$_bookmark..$n})"
+    done
+  else
+    declare -a nums
+    
+    nums=("${!wordlist[@]}")
+    for ((i=0; i<n; i++)); do
+      next=$((RANDOM%${#nums[@]}))
+      ((next == last)) && next=$((RANDOM%${#nums[@]}))
+      words+=("${nums[$next]}")
+      last=$next
+    done
+  fi
 }
 
 results() {
@@ -280,7 +277,7 @@ results() {
 
   clicksum=$((_clicks-_badclicks))
 
-  local key block acc
+  local key block acc msg
 
   tput clear
   tput civis
@@ -288,9 +285,14 @@ results() {
   # 37 6  -- 73992
   wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
   acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
-  score=$(bc  <<< "$wpm*$acc")
+  score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
+  score=${score%.*}
 
-  notify-send "$score"
+  [[ -f $_bookmarkfile ]] && {
+    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+  }
+
+  
 
   # unset 'numfiles[@]'
   # wpmr=${wpm%$wpmd}
@@ -303,41 +305,64 @@ results() {
   # fglt=$(hcat "${numfiles[@]}")
 
   block=$(
-    printf 'WPM:       %6.2f\n' "$wpm"
-    printf 'Accuracy: %6.1f%% ' "$acc"
+    printf 'WPM:      %6.2f\n' "$wpm"
+    printf 'accuracy:%6.1f%% ' "$acc"
     echo -ne "(${_c[f2]}$clicksum${_c[res]}"
-    echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
-    echo
-    echo "press 'escape' to restart"
-    echo "or 'Q' to quit"
+    echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
   )
 
   if ((_time >= 60)); then
-    :
-    highscore "$wpm"
+    ep=$EPOCHSECONDS
+    hs=$(highscore "$wpm" "$score" "$ep")
+    grep '\*' <<< "$hs" >/dev/null && \
+      msg="A winner is (You)!"$'\n\n'
+
+    poss=$(grep -n "$ep" "$TYPISKT_SCOREFILE")
+    msg+="position: ${poss%%:*}"$'\n'
+    msg+="score:    ${score}"
   else
-    block=$(hcat -s 1 <(highscore "$wpm" "$score") <(echo "$block"))
-    :
-    # no high schore
+    hs=$(highscore)
+    msg=$(printf '%s\n' \
+      "tests under 60 seconds" \
+      "are not added to the"   \
+      "scoreboard"             \
+    )
   fi
 
-  bw=$(wc -L <<< "$block")
-  bx=$(( (_width/2) -  (bw/2) ))
-  bi=$(printf "%${bx}s" " ")
+  block+=$'\n\n'"$msg"
 
-  block=$(sed "s/^/${bi}/g" <<< "$block")
+  comb=$(paste -d " " <(echo "$hs") - <<< "$block")
+  
+  # wc -L "always" report 24 characters more...
+  declare -i magic=32
+
+  bw=$(wc -L <<< "${comb}")
+  bw=$((bw-magic))
+
+  bx=$(( (_width/2) -  ((bw)/2) ))
+  
+  # don't print highscore in narrow windows
+  (( bw > (_width-2) )) && {
+    bx=1
+    comb="$block"
+  }
+
+  bi=$(printf "%${bx}s" " ")
+  comb=$(sed "s/^/${bi}/g" <<< "$comb")
 
   # need separate count because hidden chars
-  bw=$(wc -L <<< "$fglt") 
-  bx=$(( (_width/2) -  (bw/2) ))
-  bi=$(printf "%${bx}s" " ")
-  fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
-  block="$block"
+  # bw=$(wc -L <<< "$fglt") 
+  # bx=$(( (_width/2) -  (bw/2) ))
+  # bi=$(printf "%${bx}s" " ")
+  # fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
 
-  bh=$(wc -l <<< "$block")
+
+  comb="$comb"
+
+  bh=$(wc -l <<< "$comb")
   by=$(( (_height/2) - (bh/2) ))
 
-  echo -en "\e[${by};0H${block}"
+  echo -en "\e[${by};0H${comb}"
 
   while :; do
     IFS= read -rsn1 -t 0.007 key || continue
@@ -438,7 +463,7 @@ starttest() {
   local key ts
   declare -i start=0 lasttime=-1 status
 
-  _clicks=0  _badclicks=0
+  _clicks=0  _badclicks=0 _words=0
   _prompt="" _string=""
 
   # prompt floor
@@ -510,6 +535,7 @@ starttest() {
 
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
+      ((_words++))
       ((_clicks++))
       ((_oldstatus != 2)) && {
         ((_badclicks++)) 
@@ -557,8 +583,8 @@ timer() {
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
-    --options "d:c:t:w:s:lhv" \
-    --longoptions "difficulty:,corpus:,time:,width:,seed:,list,help,version," \
+    --options "d:c:t:w:s:b:lhv" \
+    --longoptions "difficulty:,corpus:,time:,width:,seed:,book:,list,help,version," \
     -- "$@" || exit 77
 )"
 
@@ -572,6 +598,7 @@ while true; do
     --time       | -t ) __o[time]="${2:-}" ; shift ;;
     --width      | -w ) __o[width]="${2:-}" ; shift ;;
     --seed       | -s ) __o[seed]="${2:-}" ; shift ;;
+    --book       | -b ) __o[book]="${2:-}" ; shift ;;
     --list       | -l ) __o[list]=1 ;; 
     --help       | -h ) ___printhelp && exit ;;
     --version    | -v ) ___printversion && exit ;;

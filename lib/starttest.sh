@@ -5,7 +5,7 @@ starttest() {
   local key ts
   declare -i start=0 lasttime=-1 status
 
-  _clicks=0  _badclicks=0
+  _clicks=0  _badclicks=0 _words=0
   _prompt="" _string=""
 
   # prompt floor
@@ -77,6 +77,7 @@ starttest() {
 
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
+      ((_words++))
       ((_clicks++))
       ((_oldstatus != 2)) && {
         ((_badclicks++)) 

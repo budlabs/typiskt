@@ -1,8 +1,8 @@
 ---
 description: >
   touchtype training for dirt-hackers
-updated:       2020-06-12
-version:       2020.06.12.1
+updated:       2020-06-13
+version:       2020.06.13.3
 author:        budRich
 repo:          https://github.com/budrich/typiskt
 created:       2020-06-08
@@ -12,10 +12,11 @@ see-also:      [https://github.com/rr-/10ff]
 type:          default
 environ:
     XDG_CONFIG_HOME: $HOME/.config
-    TYPISKT_SCOREFILE: $HOME/.cache/typiskt/scorefile
+    TYPISKT_CACHE: $HOME/.cache/typiskt
     TYPISKT_TIME_FORMAT: "%y/%m/%d"
 synopsis: |
     [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+    [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
     --list|-l
     --help|-h
     --version|-v

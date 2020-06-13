@@ -11,6 +11,7 @@ options
 
 ```text
 typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -26,6 +27,8 @@ typiskt --version|-v
 `--width`|`-w` WIDTH  
 
 `--seed`|`-s` INT  
+
+`--book`|`-b` BOOKWORDLIST  
 
 `--list`|`-l`  
 

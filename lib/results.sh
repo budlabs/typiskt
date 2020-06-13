@@ -6,7 +6,7 @@ results() {
 
   clicksum=$((_clicks-_badclicks))
 
-  local key block acc
+  local key block acc msg
 
   tput clear
   tput civis
@@ -14,7 +14,12 @@ results() {
   # 37 6  -- 73992
   wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
   acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
-  score=$(bc  <<< "$wpm*$acc")
+  score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
+  score=${score%.*}
+
+  [[ -f $_bookmarkfile ]] && {
+    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+  }
 
   
 
@@ -29,45 +34,64 @@ results() {
   # fglt=$(hcat "${numfiles[@]}")
 
   block=$(
-    printf 'WPM:       %6.2f\n' "$wpm"
-    printf 'Accuracy: %6.1f%% ' "$acc"
+    printf 'WPM:      %6.2f\n' "$wpm"
+    printf 'accuracy:%6.1f%% ' "$acc"
     echo -ne "(${_c[f2]}$clicksum${_c[res]}"
-    echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
-    echo
-    echo "press 'escape' to restart"
-    echo "or 'Q' to quit"
+    echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
   )
 
   if ((_time >= 60)); then
-    :
-    highscore "$wpm"
+    ep=$EPOCHSECONDS
+    hs=$(highscore "$wpm" "$score" "$ep")
+    grep '\*' <<< "$hs" >/dev/null && \
+      msg="A winner is (You)!"$'\n\n'
+
+    poss=$(grep -n "$ep" "$TYPISKT_SCOREFILE")
+    msg+="position: ${poss%%:*}"$'\n'
+    msg+="score:    ${score}"
   else
-    block=$(paste -d "" <(highscore "$wpm" "$score") - <<< "$block")
-    :
-    # no high schore
+    hs=$(highscore)
+    msg=$(printf '%s\n' \
+      "tests under 60 seconds" \
+      "are not added to the"   \
+      "scoreboard"             \
+    )
   fi
- 
-  bw=$(wc -L <<< "${block}")
 
+  block+=$'\n\n'"$msg"
+
+  comb=$(paste -d " " <(echo "$hs") - <<< "$block")
+  
   # wc -L "always" report 24 characters more...
-  declare -i magic=24
+  declare -i magic=32
 
-  bx=$(( (_width/2) -  ((bw-magic)/2) ))
+  bw=$(wc -L <<< "${comb}")
+  bw=$((bw-magic))
+
+  bx=$(( (_width/2) -  ((bw)/2) ))
+  
+  # don't print highscore in narrow windows
+  (( bw > (_width-2) )) && {
+    bx=1
+    comb="$block"
+  }
+
   bi=$(printf "%${bx}s" " ")
-
-  block=$(sed "s/^/${bi}/g" <<< "$block")
+  comb=$(sed "s/^/${bi}/g" <<< "$comb")
 
   # need separate count because hidden chars
-  bw=$(wc -L <<< "$fglt") 
-  bx=$(( (_width/2) -  (bw/2) ))
-  bi=$(printf "%${bx}s" " ")
-  fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
-  block="$block"
+  # bw=$(wc -L <<< "$fglt") 
+  # bx=$(( (_width/2) -  (bw/2) ))
+  # bi=$(printf "%${bx}s" " ")
+  # fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
 
-  bh=$(wc -l <<< "$block")
+
+  comb="$comb"
+
+  bh=$(wc -l <<< "$comb")
   by=$(( (_height/2) - (bh/2) ))
 
-  echo -en "\e[${by};0H${block}"
+  echo -en "\e[${by};0H${comb}"
 
   while :; do
     IFS= read -rsn1 -t 0.007 key || continue
