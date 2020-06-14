@@ -10,7 +10,6 @@ nextword() {
   _nextpos=$(( _activepos+(_activelength+1) ))
   setstatus 3
 
-  _prompt=""
   _string=""
 
   # reset prompt

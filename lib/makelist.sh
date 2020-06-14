@@ -4,11 +4,13 @@ makelist() {
 
   local list
 
-  if [[ -n ${__o[book]} ]]; then
+  if [[ -n ${__o[source]} ]]; then
+    :
+  elif [[ -n ${__o[book]} ]]; then
     list="$_dir/text/${__o[book]}"
     [[ -f $list ]] || ERX "cannot find $list"
     notify-send "$list"
-    mapfile -t wordlist < <(tac "$list")
+    mapfile -t wordlist < "$list"
     _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[book]}
     [[ -f $_bookmarkfile ]] || {
       mkdir -p "${_bookmarkfile%/*}"

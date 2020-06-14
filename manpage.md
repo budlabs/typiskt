@@ -3,8 +3,9 @@
 SYNOPSIS
 --------
 ```text
-typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-typiskt [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -12,15 +13,16 @@ typiskt --version|-v
 
 DESCRIPTION
 -----------
-https://github.com/rr-/10ff length
+https://github.com/rr-/10ff
+https://github.com/kevinboone/epub2txt2 length
 
 
 OPTIONS
 -------
 
-`--difficulty`|`-d` INT  
-
 `--corpus`|`-c` WORDLIST  
+
+`--difficulty`|`-d` INT  
 
 `--time`|`-t` SECONDS  
 
@@ -29,6 +31,8 @@ OPTIONS
 `--seed`|`-s` INT  
 
 `--book`|`-b` BOOKWORDLIST  
+
+`--source`|`-u` SOURCECODE  
 
 `--list`|`-l`  
 

@@ -1,8 +1,8 @@
 ---
 description: >
   touchtype training for dirt-hackers
-updated:       2020-06-13
-version:       2020.06.13.3
+updated:       2020-06-14
+version:       2020.06.14.0
 author:        budRich
 repo:          https://github.com/budrich/typiskt
 created:       2020-06-08
@@ -15,8 +15,9 @@ environ:
     TYPISKT_CACHE: $HOME/.cache/typiskt
     TYPISKT_TIME_FORMAT: "%y/%m/%d"
 synopsis: |
-    [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-    [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+    [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+    [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+    [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
     --list|-l
     --help|-h
     --version|-v
@@ -25,6 +26,7 @@ synopsis: |
 # long_description
 
 https://github.com/rr-/10ff
+https://github.com/kevinboone/epub2txt2
 length
 
 ### DOS Rebel

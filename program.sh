@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.13.3
-updated: 2020-06-13 by budRich
+typiskt - version: 2020.06.14.0
+updated: 2020-06-14 by budRich
 EOB
 }
 
@@ -86,8 +86,9 @@ typiskt - touchtype training for dirt-hackers
 
 SYNOPSIS
 --------
-typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-typiskt [--difficulty|-d INT] [--book|-b BOOKWORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -95,9 +96,9 @@ typiskt --version|-v
 OPTIONS
 -------
 
---difficulty|-d INT  
-
 --corpus|-c WORDLIST  
+
+--difficulty|-d INT  
 
 --time|-t SECONDS  
 
@@ -106,6 +107,8 @@ OPTIONS
 --seed|-s INT  
 
 --book|-b BOOKWORDLIST  
+
+--source|-u SOURCECODE  
 
 --list|-l  
 
@@ -206,9 +209,10 @@ makelist() {
   if [[ -n ${__o[book]} ]]; then
     list="$_dir/text/${__o[book]}"
     [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < <(tac "$list")
-    _bookmark=$TYPISKT_CACHE/bookmarks/${__o[book]}
-    [[ -f $_bookmarkfile ]] && {
+    notify-send "$list"
+    mapfile -t wordlist < "$list"
+    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[book]}
+    [[ -f $_bookmarkfile ]] || {
       mkdir -p "${_bookmarkfile%/*}"
       echo 0 > "$_bookmarkfile"
     }
@@ -233,7 +237,6 @@ nextword() {
   _nextpos=$(( _activepos+(_activelength+1) ))
   setstatus 3
 
-  _prompt=""
   _string=""
 
   # reset prompt
@@ -255,9 +258,9 @@ randomize() {
       && _bookmark=$(cat "$_bookmarkfile")
 
     ((n+=_bookmark))
-    while ((${#words[@]} < n)); do
-      eval "words=({$_bookmark..$n})"
-    done
+    
+    eval "words=({$n..$_bookmark})"
+    notify-send "${words[-1]}"
   else
     declare -a nums
     
@@ -451,23 +454,25 @@ setstatus() {
 
   local style status=$1
 
+  op+="${_c[civis]}${_c[sc]}"
   style="${_c[f$status]}${_activeword}${_c[res]}"
   op+="\e[${pos[aY]};$((_activepos+1+pos[aX]))H${style}"
-  op+="\e[${pos[pY]};$((pos[pX]+${#_string}))H"
+  # op+="\e[${pos[pY]};$((pos[pX]+${#_string}))H"
+  op+="${_c[cnorm]}${_c[rc]}"
 
   _oldstatus=$status
 }
 
 starttest() {
 
-  local key ts
-  declare -i start=0 lasttime=-1 status
+  local key c1 c2
+  declare -i start=0 lasttime=-1 status sl cl
 
   _clicks=0  _badclicks=0 _words=0
-  _prompt="" _string=""
+  _string=""
 
   # prompt floor
-  local f 
+  local f
   declare -i fx fy
   declare -i fw=14   # floor width
 
@@ -477,6 +482,7 @@ starttest() {
 
   op="\e[${fy};${fx}H$f"
   
+  # 9*time ~ 500wpm
   randomize $((_time*9))
   makeline
   setline
@@ -485,61 +491,37 @@ starttest() {
 
   while : ; do
 
-    ((start)) && ((SECONDS>_t)) && break
-    [[ -n $op ]] && {
-      echo -en "$op"
-      op=""
-    }
-    ((start)) && ((SECONDS != lasttime)) && timer
+    ((start && SECONDS>_t)) && break
+
+    # update screen
+    [[ -n $op ]] && { echo -en "$op" ; op="" ;}
+
+    ((start && SECONDS != lasttime)) && timer
     
     # https://stackoverflow.com/a/46481173
     IFS= read -rsn1 -t 0.01 key || continue
 
-    # pressing escape will restart the game
-    if [[ $key = $'\u1b' ]]; then
-      read -rsn2 -t 0.001 && continue 
-      # read above, to catch arrowkeys etc
-      return
-
-    # https://askubuntu.com/a/299469
-    # backspace key
-    elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1)) && continue
-      _prompt+=$'\b \b'
-      _string=${_string:0:-1}
-
-      ts="$_string"
-
-      # hack to allow special chars in regex
-      [[ ${_string} =~ [][}{\(^$\\] ]] \
-        && ts=$(printf '%q' "$_string")
-      [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
-
-      # penalty for erasing good char
-      ((_oldstatus == 1)) || ((_badclicks++))
-      
-
     # any graphical character
-    elif [[ $key =~ [[:graph:]] ]]; then
-      _prompt+=$key
+    if [[ $key =~ [[:graph:]] ]]; then
       _string+=$key
 
+      # start the timer
       ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
+
       nextchar=${_activeword:$((${#_string}-1)):1}
-
-      [[ $key = "$nextchar" ]] \
-        && status=$_oldstatus || status=1
-
-      ((_clicks++))
-      ((status == 1)) && ((_badclicks++))
+      [[ $key = "$nextchar" ]] && status=$_oldstatus \
+                               || status=1
+      
+      ((++_clicks && status == 1 && _badclicks++))
 
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
-      ((_words++))
-      ((_clicks++))
-      ((_oldstatus != 2)) && {
-        ((_badclicks++)) 
-        ((_activepos == _lastpos)) || setstatus 1
+      (( _words++ + _clicks++ ))
+      ((_oldstatus != 2 && ++_badclicks)) && {
+        
+        ((_oldstatus == 1 || _activepos == _lastpos)) \
+          || setstatus 1
+
         sl=${#_string}
         cl=$((sl>_activelength?sl:_activelength))
         for ((i=0;i<cl;i++)); do
@@ -549,15 +531,31 @@ starttest() {
       }
       nextword
       continue
+    # https://askubuntu.com/a/299469
+    # backspace key
+    elif [[ $key = $'\177' ]]; then
+      ((${#_string}<1)) && continue
+      key=$'\b \b'
+      _string=${_string:0:-1}
+
+      [[ $_string = "${_activeword:0:${#_string}}" ]] \
+        && status=3 || status=1
+
+      # penalty for erasing good char
+      ((_oldstatus == 1 || _badclicks++)) 
+    # pressing escape will restart the game
+    elif [[ $key = $'\u1b' ]]; then
+      # catch arrowkeys etc
+      read -rsn2 -t 0.001 && continue 
+      return  
     else
       continue
     fi
 
     [[ $_activeword = "$_string" ]] && status=2
 
-    ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
     ((status == _oldstatus)) || setstatus $status
-    op+="\e[${pos[pY]};${pos[pX]}H${_prompt}"
+    op+="$key"
 
   done
 
@@ -583,8 +581,8 @@ timer() {
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
-    --options "d:c:t:w:s:b:lhv" \
-    --longoptions "difficulty:,corpus:,time:,width:,seed:,book:,list,help,version," \
+    --options "c:d:t:w:s:b:u:lhv" \
+    --longoptions "corpus:,difficulty:,time:,width:,seed:,book:,source:,list,help,version," \
     -- "$@" || exit 77
 )"
 
@@ -593,12 +591,13 @@ unset options
 
 while true; do
   case "$1" in
-    --difficulty | -d ) __o[difficulty]="${2:-}" ; shift ;;
     --corpus     | -c ) __o[corpus]="${2:-}" ; shift ;;
+    --difficulty | -d ) __o[difficulty]="${2:-}" ; shift ;;
     --time       | -t ) __o[time]="${2:-}" ; shift ;;
     --width      | -w ) __o[width]="${2:-}" ; shift ;;
     --seed       | -s ) __o[seed]="${2:-}" ; shift ;;
     --book       | -b ) __o[book]="${2:-}" ; shift ;;
+    --source     | -u ) __o[source]="${2:-}" ; shift ;;
     --list       | -l ) __o[list]=1 ;; 
     --help       | -h ) ___printhelp && exit ;;
     --version    | -v ) ___printversion && exit ;;
