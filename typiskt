@@ -3,35 +3,41 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.10.0
-updated: 2020-06-10 by budRich
+typiskt - version: 2020.06.14.1
+updated: 2020-06-14 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
+: "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 
 
 main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
+  _bookmarkfile=""
 
   ((__o[list])) && listcorpuses
 
   declare -i _height _width _maxW _difficulty
   declare -i _activepos _nextpos _lastpos
-  declare -i _time _t _oldstatus
+  declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
+  declare -i _seed
 
   declare -a wordlist  # wordlist as array
   declare -a words     # ${wordlist[${words[-1]}]}=next
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
-  RANDOM=$(od -An -N3 -i /dev/random)
+  : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
+  RANDOM=$_seed
 
+  makelist
   initscreen
 
   declare -A pos
@@ -42,7 +48,10 @@ main() {
   pos[tX]=$(( (_width/2) - (5/2) ))
 
   declare -A _c
-  for k in {0..7}; do _c[f$k]=$(tput setaf "$k"); done
+  for k in {0..7}; do 
+    _c[f$k]=$(tput setaf "$k")
+    _c[b$k]=$(tput setab "$k")
+  done
   _c[res]=$(tput sgr0)
   _c[sc]=$(tput sc)
   _c[rc]=$(tput rc)
@@ -53,7 +62,6 @@ main() {
   
   blank=$(printf "%${_width}s" " ")
 
-  makelist
   _difficulty=$(( __o[difficulty] < 1  ? 0 : 
                   __o[difficulty] < 11 ? __o[difficulty] :
                   __o[difficulty] > 10 ? 10 : 0 ))
@@ -63,11 +71,9 @@ main() {
     _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
   }
 
-  while : ; do
+  while ((_restart)); do
     while ((_restart)); do starttest ; done
-
     results
-    ((_restart)) || break
   done
 
 }
@@ -80,7 +86,9 @@ typiskt - touchtype training for dirt-hackers
 
 SYNOPSIS
 --------
-typiskt [--difficulty|-d INT] [--corpus|-c WORDLIST] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -88,13 +96,19 @@ typiskt --version|-v
 OPTIONS
 -------
 
---difficulty|-d INT  
-
 --corpus|-c WORDLIST  
+
+--difficulty|-d INT  
 
 --time|-t SECONDS  
 
 --width|-w WIDTH  
+
+--seed|-s INT  
+
+--book|-b BOOKWORDLIST  
+
+--source|-u SOURCECODE  
 
 --list|-l  
 
@@ -132,6 +146,41 @@ ERH(){
   exit 77
 }
 
+highscore() {
+  local f=$TYPISKT_CACHE/scorefile tmp wpm=$1 score=$2
+  declare -i t=$3 i
+
+  [[ -n $f ]] && {
+
+    tmp=$(mktemp)
+
+    mkdir -p "${f%/*}"
+
+    [[ -n $wpm ]] && {
+      echo "$score $wpm $t" >> "$f"
+      sort -rn "$f" > "$tmp" && mv -f "$tmp" "$f"
+    }
+
+    mapfile -t tt < "$f"
+    local c ct cs dummy
+    dummy=" 100.99 $(date +"$TYPISKT_TIME_FORMAT")"
+
+    for ((i=0;i<7;i++)); do
+      if [[ -n ${tt[$i]} ]]; then
+        c=${tt[$i]#* } ct=${c#* } cs=${c% *}
+        ((ct == t)) && echo -en "*${_c[b2]}" || echo -n " "
+        printf '%6.2f ' "$cs"
+        echo -n "$(date -d @"$ct" +"$TYPISKT_TIME_FORMAT")"
+        ((ct == t)) && echo -ne "${_c[res]}"
+        echo "${_c[f4]}▕${_c[res]}"
+      else
+        echo "${dummy//[^[:space:]]/ }${_c[f4]}▕${_c[res]}"
+      fi
+    done
+  }
+}
+# ▕   ▎ 
+
 initscreen() {
 
   read -r _height _width < <(stty size)
@@ -154,11 +203,30 @@ listcorpuses() {
 }
 
 makelist() {
+
   local list
-  list="$_dir/wordlists/${__o[corpus]:-english}"
-  [[ -f $list ]] || ERX "cannot find $list"
-  
-  mapfile -t wordlist < "$list"
+
+  if [[ -n ${__o[source]} ]]; then
+    list=${__o[source]}
+    [[ -f $list ]] || ERX "cannot find $list"
+    mapfile -t wordlist < <(wordsfromfile "$list")
+    __o[width]=$(wc -L < "$list")
+    # exit
+  elif [[ -n ${__o[book]} ]]; then
+    list="$_dir/text/${__o[book]}"
+    [[ -f $list ]] || ERX "cannot find $list"
+    mapfile -t wordlist < "$list"
+    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[book]}
+    [[ -f $_bookmarkfile ]] || {
+      mkdir -p "${_bookmarkfile%/*}"
+      echo 0 > "$_bookmarkfile"
+    }
+  else
+    list="$_dir/wordlists/${__o[corpus]:-english}"
+    [[ -f $list ]] || ERX "cannot find $list"
+    mapfile -t wordlist < "$list"
+  fi
+ 
 }
 
 
@@ -174,11 +242,10 @@ nextword() {
   _nextpos=$(( _activepos+(_activelength+1) ))
   setstatus 3
 
-  _prompt=""
   _string=""
 
   # reset prompt
-  echo -en "$op\e[${pos[pY]};0H${blank}\e[${pos[pY]};${pos[pX]}H"
+  op+="\e[${pos[pY]};0H${blank}\e[${pos[pY]};${pos[pX]}H"
 
 }
 
@@ -187,73 +254,116 @@ randomize() {
   local n last next
 
   n=${1:-100}
-  declare -a nums
-  nums=("${!wordlist[@]}")
+  unset 'words[@]'
+  
 
-  for ((i=0; i<n; i++)); do
-    next=$((RANDOM%${#nums[@]}))
-    ((next == last)) && next=$((RANDOM%${#nums[@]}))
-    words+=("${nums[$next]}")
-    last=$next
-  done
+  if [[ -n ${__o[book]} ]]; then
+    # notify-send "$(sort -r < "$_list")"
+    [[ -f $_bookmarkfile ]] \
+      && _bookmark=$(cat "$_bookmarkfile")
+
+    ((n+=_bookmark))
+    
+    eval "words=({$n..$_bookmark})"
+  elif [[ -n ${__o[source]} ]]; then
+    eval "words=({$n..0})"
+  else
+    declare -a nums
+    
+    nums=("${!wordlist[@]}")
+    for ((i=0; i<n; i++)); do
+      next=$((RANDOM%${#nums[@]}))
+      ((next == last)) && next=$((RANDOM%${#nums[@]}))
+      words+=("${nums[$next]}")
+      last=$next
+    done
+  fi
 }
 
 results() {
 
-  declare -i clicksum acc bh bw
+  declare -i clicksum bh bw 
 
   clicksum=$((_clicks-_badclicks))
 
-  local key block
+  local key block acc msg
 
   tput clear
   tput civis
 
-  # words per minute 2 point presicion
-  wpm=$(bc -l <<< "scale=1
-    ( (${clicksum}) / ${_time} )*12
-  ")
+  wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
+  acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
+  score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
+  score=${score%.*}
 
-  # accuracy
-  acc=$((100-(_badclicks/clicksum)*100))
-
-  fglt=$(
-    figlet -f "DOS Rebel" "$(printf "%.0f" "$wpm")" \
-      | sed '/^[[:space:]]*$/ d'
-  )
+  [[ -f $_bookmarkfile ]] && {
+    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+  }
 
   block=$(
-    printf '\n\n%-10s%-4s %s\n' "Speed:" "$wpm" "WPM"
-    printf '%-10s%-4s '         "Accuracy:" "$acc%"
+    printf 'WPM:      %6.2f\n' "$wpm"
+    printf 'accuracy:%6.1f%% ' "$acc"
     echo -ne "(${_c[f2]}$clicksum${_c[res]}"
-    echo -e  "|${_c[f1]}$_badclicks${_c[res]})\n"
-    echo '[R]estart'
-    echo '[Q]uit'
+    echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
   )
 
-  bw=$(wc -L <<< "$fglt")
-  ((bw<=_maxW)) && block="${fglt}$block" || bw=$_maxW
-  bh=$(wc -l <<< "$block")
+  if ((_time >= 60)); then
+    ep=$EPOCHSECONDS
+    hs=$(highscore "$wpm" "$score" "$ep")
+    grep '\*' <<< "$hs" >/dev/null && \
+      msg="A winner is (You)!"$'\n\n'
 
-  # need separate count because hidden chars
-  # read -r bh bw < <(wc -lL <<< "$block")
-  by=$(( (pos[pY/2]) - (bh/2) ))
-  bx=$(( (_width/2) - (bw/2) ))
+    poss=$(grep -n "$ep" "$TYPISKT_CACHE/scorefile")
+    msg+="position: ${poss%%:*}"$'\n'
+    msg+="score:    ${score}"
+  else
+    hs=$(highscore)
+    msg=$(printf '%s\n' \
+      "tests under 60 seconds" \
+      "are not added to the"   \
+      "scoreboard"             \
+    )
+  fi
+
+  block+=$'\n\n'"$msg"
+
+  comb=$(paste -d " " <(echo "$hs") - <<< "$block")
   
-  # add intendation to center horizontally
+  # wc -L "always" report 24 characters more...
+  declare -i magic=32
+
+  bw=$(wc -L <<< "${comb}")
+  bw=$((bw-magic))
+
+  bx=$(( (_width/2) -  ((bw)/2) ))
+  
+  # don't print highscore in narrow windows
+  (( bw > (_width-2) )) && {
+    bx=1
+    comb="$block"
+  }
+
   bi=$(printf "%${bx}s" " ")
-  block=$(sed "s/^/${bi}/g" <<< "$block")
-  echo -en "\e[${by};0H${block}"
+  comb=$(sed "s/^/${bi}/g" <<< "$comb")
+  comb="$comb"
+
+  bh=$(wc -l <<< "$comb")
+  by=$(( (_height/2) - (bh/2) ))
+
+  echo -en "\e[${by};0H${comb}"
 
   while :; do
     IFS= read -rsn1 -t 0.007 key || continue
 
-    case "$key" in
-      Q ) break ;;
-      R ) _restart=1 ; break ;;
-    esac
-    
+    if [[ $key = $'\u1b' ]]; then
+      read -rsn2 -t 0.001 && continue 
+      _restart=1 ; break
+    elif [[ $key = Q ]]; then
+      break
+    fi
+ 
   done
+  tput clear
 }
 
 setline() {
@@ -261,7 +371,7 @@ setline() {
   # call makeline to create new nextline
   # clear both old lines and print the two new ones
 
-  local k op=""
+  local k
 
   ((pos[aX])) && indent="$(printf "%${pos[aX]}s" " ")"
 
@@ -275,11 +385,10 @@ setline() {
   _nextpos=0
   makeline
 
-  op="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
   op+="$indent${nextline[*]}"
 
-  echo -en "$op"
 }
 
 makeline() {
@@ -313,7 +422,12 @@ makeline() {
     }
    
     wl=${#w}
-    (( (ll+=(wl+1)) > _maxW )) && break
+
+    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+    [[ $w = "@@EOL" ]] && {
+      unset 'words[-1]'
+      break
+    }
 
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")
@@ -325,115 +439,113 @@ makeline() {
 
 setstatus() {
 
-  # changes color of "activeword"
+  # changes color of "_activeword"
   # 1=red, 2=green, 3=yellow
 
   local style status=$1
 
+  op+="${_c[civis]}${_c[sc]}"
   style="${_c[f$status]}${_activeword}${_c[res]}"
-  tput civis
-  echo -en "\e[${pos[aY]};$((_activepos+1+pos[aX]))H${style}"
-  tput cnorm
+  op+="\e[${pos[aY]};$((_activepos+1+pos[aX]))H${style}"
+  # op+="\e[${pos[pY]};$((pos[pX]+${#_string}))H"
+  op+="${_c[cnorm]}${_c[rc]}"
 
   _oldstatus=$status
 }
 
 starttest() {
 
-  local key ts
-  declare -i start=0 lasttime=-1 status
-  _clicks=0 _badclicks=0
+  local key c1 c2
+  declare -i start=0 lasttime=-1 status sl cl
 
-  tput clear
+  _clicks=0  _badclicks=0 _words=0
+  _string=""
 
   # prompt floor
-  local f 
+  local f
   declare -i fx fy
-  declare -i fw=14   # undeline width
+  declare -i fw=14   # floor width
 
   f=$(printf "%${fw}s" " ")  f=${f// /─}
   fx=$(( (_width/2) - (fw/2) )) fy=$((pos[pY]+1))
   pos[pX]=$((fx+1))
 
-  echo -en "\e[${fy};${fx}H$f"
+  op="\e[${fy};${fx}H$f"
   
+  # 9*time ~ 500wpm
   randomize $((_time*9))
   makeline
   setline
-  _prompt=""
-  _string=""
-
   nextword
   timer
 
   while : ; do
 
-    ((start)) && ((SECONDS>_t)) && break
-    ((start)) && ((SECONDS != lasttime)) && timer
+    ((start && SECONDS>_t)) && break
+
+    # update screen
+    [[ -n $op ]] && { echo -en "$op" ; op="" ;}
+
+    ((start && SECONDS != lasttime)) && timer
     
     # https://stackoverflow.com/a/46481173
-    IFS= read -rsn1 -t 0.007 key || continue
+    IFS= read -rsn1 -t 0.01 key || continue
 
-    if [[ $key = $'\u1b' ]]; then
-      read -rsn2 -t 0.001 && continue 
-      # pressing escape will restart the game
-      # read above, to catch arrowkeys etc
-      return
-    # https://askubuntu.com/a/299469
-    elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1)) && continue
-      _prompt+=$'\b \b'
-      _string=${_string:0:-1}
-    elif [[ $key =~ [[:graph:]] ]]; then
-      _prompt+=$key
+    # any graphical character
+    if [[ $key =~ [[:graph:]] ]]; then
       _string+=$key
-    elif [[ $key = " " ]]; then
-      ((_clicks++))
-      ((_oldstatus != 2)) && {
-        ((_badclicks++)) 
-        setstatus 1
+
+      # start the timer
+      ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
+
+      nextchar=${_activeword:$((${#_string}-1)):1}
+      [[ $key = "$nextchar" ]] && status=$_oldstatus \
+                               || status=1
+      
+      ((++_clicks && status == 1 && _badclicks++))
+
+    # space, submit word (empty $key == Enter)
+    elif [[ $key = " " || -z $key ]]; then
+      (( _words++ + _clicks++ ))
+      ((_oldstatus != 2 && ++_badclicks)) && {
+        
+        ((_oldstatus == 1 || _activepos == _lastpos)) \
+          || setstatus 1
+
         sl=${#_string}
-        cl=$((sl>$_activelength?sl:_activelength))
+        cl=$((sl>_activelength?sl:_activelength))
         for ((i=0;i<cl;i++)); do
           c1=${_string:$i:1} c2=${_activeword:$i:1}
-          [[ $c1 = $2 ]] || ((_badclicks++))
+          [[ $c1 = "$c2" ]] || ((_badclicks++))
         done
-        # bads=$((${#_string} - _activelength))
-        # ((_badclicks+=(bads<0 ? bads*-1 : bads) ))
       }
       nextword
       continue
+    # https://askubuntu.com/a/299469
+    # backspace key
+    elif [[ $key = $'\177' ]]; then
+      ((${#_string}<1)) && continue
+      key=$'\b \b'
+      _string=${_string:0:-1}
+
+      [[ $_string = "${_activeword:0:${#_string}}" ]] \
+        && status=3 || status=1
+
+      # penalty for erasing good char
+      ((_oldstatus == 1 || _badclicks++)) 
+    # pressing escape will restart the game
+    elif [[ $key = $'\u1b' ]]; then
+      # catch arrowkeys etc
+      read -rsn2 -t 0.001 && continue 
+      return  
     else
       continue
     fi
 
-    ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
-
-    nextchar=${_activeword:$((${#_string}-1)):1}
-
-    if [[ $_activeword = "$_string" ]]; then
-      status=2
-    elif [[ $key = "$nextchar" ]]; then
-      status=3
-    elif [[ $key = $'\177' ]]; then
-      ts="$_string"
-      # don't erase a good character
-      ((status == 1)) || ((_badclicks++))
-      # hack to allow special chars in regex
-      [[ ${_string} =~ [][}{\(^$\\] ]] \
-        && ts=$(printf '%q' "$_string")
-      [[ "$_activeword" =~ ^${ts} ]] && status=3 || status=1
-    else # don't match
-      status=1
-    fi
-
-    [[ $key = $'\177' ]] || {
-      ((_clicks++))
-      ((status == 1)) && ((_badclicks++))
-    }
+    [[ $_activeword = "$_string" ]] && status=2
 
     ((status == _oldstatus)) || setstatus $status
-    echo -en "\e[${pos[pY]};${pos[pX]}H${_prompt}"
+    op+="$key"
 
   done
 
@@ -441,27 +553,43 @@ starttest() {
 }
 
 timer() {
-  declare -i m s t 
-  local op=""
-  t=$((_t-SECONDS))
-  ((lasttime==-1)) && t=$((_time))
-  m=$(( t/60 ))
-  s=$(( t%60 ))
+  declare -i m s remaining 
+
+  remaining=$((_t-SECONDS))
+  ((lasttime==-1)) && remaining=$((_time))
+  m=$(( remaining/60 ))
+  s=$(( remaining%60 ))
 
   op+="${_c[civis]}${_c[sc]}"
   op+="\e[${pos[tY]};${pos[tX]}H$(printf '%02d:%02d' $m $s)"
   op+="${_c[cnorm]}${_c[rc]}"
-  echo -en "$op"
 
   lasttime=$SECONDS
 
 }
 
+wordsfromfile() {
+  local f=$1
+
+  awk -v sq="'" '
+  /\S/ {
+    sub(/^\s+$/,"")
+    for (i=1;i<NF+1;i++) {
+      word=$i
+      if(word != "") print word
+    }
+    print "@@EOL"
+  }
+  END { print "@@EOF" }
+  ' "$f"
+}
+
+
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
-    --options "d:c:t:w:lhv" \
-    --longoptions "difficulty:,corpus:,time:,width:,list,help,version," \
+    --options "c:d:t:w:s:b:u:lhv" \
+    --longoptions "corpus:,difficulty:,time:,width:,seed:,book:,source:,list,help,version," \
     -- "$@" || exit 77
 )"
 
@@ -470,10 +598,13 @@ unset options
 
 while true; do
   case "$1" in
-    --difficulty | -d ) __o[difficulty]="${2:-}" ; shift ;;
     --corpus     | -c ) __o[corpus]="${2:-}" ; shift ;;
+    --difficulty | -d ) __o[difficulty]="${2:-}" ; shift ;;
     --time       | -t ) __o[time]="${2:-}" ; shift ;;
     --width      | -w ) __o[width]="${2:-}" ; shift ;;
+    --seed       | -s ) __o[seed]="${2:-}" ; shift ;;
+    --book       | -b ) __o[book]="${2:-}" ; shift ;;
+    --source     | -u ) __o[source]="${2:-}" ; shift ;;
     --list       | -l ) __o[list]=1 ;; 
     --help       | -h ) ___printhelp && exit ;;
     --version    | -v ) ___printversion && exit ;;
