@@ -16,7 +16,8 @@ randomize() {
     ((n+=_bookmark))
     
     eval "words=({$n..$_bookmark})"
-    notify-send "${words[-1]}"
+  elif [[ -n ${__o[source]} ]]; then
+    eval "words=({$n..0})"
   else
     declare -a nums
     

@@ -10,8 +10,7 @@ results() {
 
   tput clear
   tput civis
-# 093600
-  # 37 6  -- 73992
+
   wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
   acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
   score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
@@ -20,18 +19,6 @@ results() {
   [[ -f $_bookmarkfile ]] && {
     echo "$((_bookmark+_words))" > "$_bookmarkfile"
   }
-
-  
-
-  # unset 'numfiles[@]'
-  # wpmr=${wpm%$wpmd}
-  # declare -a numfiles
-  # for ((i=0;i<${#wpmr};i++)) ; do
-  #   fil="$_dir/DOSrebel/${wpmr:$i:1}"
-  #   [[ -f $fil ]] && numfiles+=("$fil")
-  # done
-
-  # fglt=$(hcat "${numfiles[@]}")
 
   block=$(
     printf 'WPM:      %6.2f\n' "$wpm"
@@ -46,7 +33,7 @@ results() {
     grep '\*' <<< "$hs" >/dev/null && \
       msg="A winner is (You)!"$'\n\n'
 
-    poss=$(grep -n "$ep" "$TYPISKT_SCOREFILE")
+    poss=$(grep -n "$ep" "$TYPISKT_CACHE/scorefile")
     msg+="position: ${poss%%:*}"$'\n'
     msg+="score:    ${score}"
   else
@@ -78,14 +65,6 @@ results() {
 
   bi=$(printf "%${bx}s" " ")
   comb=$(sed "s/^/${bi}/g" <<< "$comb")
-
-  # need separate count because hidden chars
-  # bw=$(wc -L <<< "$fglt") 
-  # bx=$(( (_width/2) -  (bw/2) ))
-  # bi=$(printf "%${bx}s" " ")
-  # fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
-
-
   comb="$comb"
 
   bh=$(wc -l <<< "$comb")

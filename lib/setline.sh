@@ -56,7 +56,12 @@ makeline() {
     }
    
     wl=${#w}
-    (( (ll+=(wl+1)) > _maxW )) && break
+
+    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+    [[ $w = "@@EOL" ]] && {
+      unset 'words[-1]'
+      break
+    }
 
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")

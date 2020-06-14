@@ -22,6 +22,7 @@ main() {
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
 
+  makelist
   initscreen
 
   declare -A pos
@@ -46,7 +47,6 @@ main() {
   
   blank=$(printf "%${_width}s" " ")
 
-  makelist
   _difficulty=$(( __o[difficulty] < 1  ? 0 : 
                   __o[difficulty] < 11 ? __o[difficulty] :
                   __o[difficulty] > 10 ? 10 : 0 ))
