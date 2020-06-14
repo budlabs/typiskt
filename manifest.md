@@ -2,7 +2,7 @@
 description: >
   touchtype training for dirt-hackers
 updated:       2020-06-14
-version:       2020.06.14.0
+version:       2020.06.14.1
 author:        budRich
 repo:          https://github.com/budrich/typiskt
 created:       2020-06-08

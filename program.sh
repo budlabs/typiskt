@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.14.0
+typiskt - version: 2020.06.14.1
 updated: 2020-06-14 by budRich
 EOB
 }
@@ -36,6 +37,7 @@ main() {
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
 
+  makelist
   initscreen
 
   declare -A pos
@@ -60,7 +62,6 @@ main() {
   
   blank=$(printf "%${_width}s" " ")
 
-  makelist
   _difficulty=$(( __o[difficulty] < 1  ? 0 : 
                   __o[difficulty] < 11 ? __o[difficulty] :
                   __o[difficulty] > 10 ? 10 : 0 ))
@@ -83,6 +84,14 @@ cat << 'EOB' >&2
 typiskt - touchtype training for dirt-hackers
 
 
+SYNOPSIS
+--------
+typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
+typiskt [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt --list|-l
+typiskt --help|-h
+typiskt --version|-v
 
 OPTIONS
 -------
@@ -197,10 +206,15 @@ makelist() {
 
   local list
 
-  if [[ -n ${__o[book]} ]]; then
+  if [[ -n ${__o[source]} ]]; then
+    list=${__o[source]}
+    [[ -f $list ]] || ERX "cannot find $list"
+    mapfile -t wordlist < <(wordsfromfile "$list")
+    __o[width]=$(wc -L < "$list")
+    # exit
+  elif [[ -n ${__o[book]} ]]; then
     list="$_dir/text/${__o[book]}"
     [[ -f $list ]] || ERX "cannot find $list"
-    notify-send "$list"
     mapfile -t wordlist < "$list"
     _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[book]}
     [[ -f $_bookmarkfile ]] || {
@@ -251,7 +265,8 @@ randomize() {
     ((n+=_bookmark))
     
     eval "words=({$n..$_bookmark})"
-    notify-send "${words[-1]}"
+  elif [[ -n ${__o[source]} ]]; then
+    eval "words=({$n..0})"
   else
     declare -a nums
     
@@ -275,8 +290,7 @@ results() {
 
   tput clear
   tput civis
-# 093600
-  # 37 6  -- 73992
+
   wpm=$(bc -l <<< "scale=2;($clicksum/$_time)*12")
   acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
   score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
@@ -285,18 +299,6 @@ results() {
   [[ -f $_bookmarkfile ]] && {
     echo "$((_bookmark+_words))" > "$_bookmarkfile"
   }
-
-  
-
-  # unset 'numfiles[@]'
-  # wpmr=${wpm%$wpmd}
-  # declare -a numfiles
-  # for ((i=0;i<${#wpmr};i++)) ; do
-  #   fil="$_dir/DOSrebel/${wpmr:$i:1}"
-  #   [[ -f $fil ]] && numfiles+=("$fil")
-  # done
-
-  # fglt=$(hcat "${numfiles[@]}")
 
   block=$(
     printf 'WPM:      %6.2f\n' "$wpm"
@@ -311,7 +313,7 @@ results() {
     grep '\*' <<< "$hs" >/dev/null && \
       msg="A winner is (You)!"$'\n\n'
 
-    poss=$(grep -n "$ep" "$TYPISKT_SCOREFILE")
+    poss=$(grep -n "$ep" "$TYPISKT_CACHE/scorefile")
     msg+="position: ${poss%%:*}"$'\n'
     msg+="score:    ${score}"
   else
@@ -343,14 +345,6 @@ results() {
 
   bi=$(printf "%${bx}s" " ")
   comb=$(sed "s/^/${bi}/g" <<< "$comb")
-
-  # need separate count because hidden chars
-  # bw=$(wc -L <<< "$fglt") 
-  # bx=$(( (_width/2) -  (bw/2) ))
-  # bi=$(printf "%${bx}s" " ")
-  # fglt=$(sed "s/^/${bi}/g" <<< "$fglt")
-
-
   comb="$comb"
 
   bh=$(wc -l <<< "$comb")
@@ -428,7 +422,12 @@ makeline() {
     }
    
     wl=${#w}
-    (( (ll+=(wl+1)) > _maxW )) && break
+
+    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+    [[ $w = "@@EOL" ]] && {
+      unset 'words[-1]'
+      break
+    }
 
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")
@@ -569,11 +568,28 @@ timer() {
 
 }
 
+wordsfromfile() {
+  local f=$1
+
+  awk -v sq="'" '
+  /\S/ {
+    sub(/^\s+$/,"")
+    for (i=1;i<NF+1;i++) {
+      word=$i
+      if(word != "") print word
+    }
+    print "@@EOL"
+  }
+  END { print "@@EOF" }
+  ' "$f"
+}
+
+
 declare -A __o
 options="$(
   getopt --name "[ERROR]:typiskt" \
     --options "c:d:t:w:s:b:u:lhv" \
-    
+    --longoptions "corpus:,difficulty:,time:,width:,seed:,book:,source:,list,help,version," \
     -- "$@" || exit 77
 )"
 
