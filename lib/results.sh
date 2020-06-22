@@ -73,7 +73,7 @@ results() {
   echo -en "\e[${by};0H${comb}"
 
   while :; do
-    IFS= read -rsn1 -t 0.007 key || continue
+    IFS= read -rsn1 key || continue
 
     if [[ $key = $'\u1b' ]]; then
       read -rsn2 -t 0.001 && continue 

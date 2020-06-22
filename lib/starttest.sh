@@ -36,7 +36,7 @@ starttest() {
     ((start && SECONDS != lasttime)) && timer
     
     # https://stackoverflow.com/a/46481173
-    IFS= read -rsn1 -t 0.01 key || continue
+    IFS= read -rsn1 key || continue
 
     # any graphical character
     if [[ $key =~ [[:graph:]] ]]; then
