@@ -11,13 +11,13 @@ randomize() {
   if [[ -n ${__o[book]} ]]; then
     # notify-send "$(sort -r < "$_list")"
     [[ -f $_bookmarkfile ]] \
-      && _bookmark=$(cat "$_bookmarkfile")
+      && _bookmark=$(< "$_bookmarkfile")
 
     ((n+=_bookmark))
     
     eval "words=({$n..$_bookmark})"
   elif [[ -n ${__o[source]} ]]; then
-    eval "words=({$n..0})"
+    eval "words=({${#wordlist[@]}..0})"
   else
     declare -a nums
     

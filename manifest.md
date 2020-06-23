@@ -16,8 +16,9 @@ environ:
     TYPISKT_TIME_FORMAT: "%y/%m/%d"
 synopsis: |
     [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-    [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-    [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
+    [--book|-b TEXTFILE] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+    [--source|-u SOURCECODE] [--width|-w WIDTH]
+    [--exercise|-e DIR] [--width|-w WIDTH]
     --list|-l
     --help|-h
     --version|-v
