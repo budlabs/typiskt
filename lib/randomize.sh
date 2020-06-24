@@ -3,21 +3,21 @@
 randomize() {
 
   local n last next
-
+  declare -i t
   n=${1:-100}
   unset 'words[@]'
   
 
   if [[ -n ${__o[book]} ]]; then
-    # notify-send "$(sort -r < "$_list")"
-    [[ -f $_bookmarkfile ]] \
-      && _bookmark=$(< "$_bookmarkfile")
+
+    [[ -f $_bookmarkfile ]] && _bookmark=$(< "$_bookmarkfile")
 
     ((n+=_bookmark))
-    
     eval "words=({$n..$_bookmark})"
-  elif [[ -n ${__o[source]} ]]; then
-    eval "words=({${#wordlist[@]}..0})"
+
+  elif [[ -n ${__o[source]} || -n ${__o[exercise]} ]]; then
+    t=${#wordlist[@]}
+    eval "words=({$t..0})"
   else
     declare -a nums
     

@@ -3,9 +3,9 @@
 starttest() {
 
   local key c1 c2
-  declare -i start=0 lasttime=-1 status sl cl
+  declare -i  lasttime=-1 status sl cl
 
-  _clicks=0  _badclicks=0 _words=0
+  _clicks=0  _badclicks=0 _words=0 _start=0
   _string=""
 
   # prompt floor
@@ -18,22 +18,29 @@ starttest() {
   pos[pX]=$((fx+1))
 
   op="\e[${fy};${fx}H$f"
+
+  [[ -n ${__o[exercise]} ]] && ((pos[pY]>1)) \
+    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($_lastexercise/${#exercises[@]})"
   
   # 9*time ~ 500wpm
   randomize $((_time*9))
   makeline
   setline
   nextword
-  timer
+  ((_time)) && timer
+  
+  
+  
 
   while : ; do
 
-    ((start && SECONDS>_t)) && break
+    ((_start && SECONDS>_t && _time)) && break
+    [[ -n ${__o[exercise]} ]] && ((${#wordlist[@]}==_words)) && break 
 
     # update screen
     [[ -n $op ]] && { echo -en "$op" ; op="" ;}
 
-    ((start && SECONDS != lasttime)) && timer
+    ((_start && SECONDS != lasttime && _time)) && timer
     
     # https://stackoverflow.com/a/46481173
     IFS= read -rsn1 key || continue
@@ -43,7 +50,7 @@ starttest() {
       _string+=$key
 
       # start the timer
-      ((start)) || { start=1 ; _t=$((_time+SECONDS)) ;}
+      ((_start)) || { _start=$SECONDS ; _t=$((_time+SECONDS)) ;}
 
       nextchar=${_activeword:$((${#_string}-1)):1}
       [[ $key = "$nextchar" ]] && status=$_oldstatus \

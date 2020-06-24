@@ -4,8 +4,9 @@ SYNOPSIS
 --------
 ```text
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-typiskt [--book|-b BOOKWORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt [--source|-u SOURCECODE] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--book|-b TEXTFILE] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt [--source|-u SOURCECODE] [--width|-w WIDTH]
+typiskt [--exercise|-e DIR] [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -30,9 +31,11 @@ OPTIONS
 
 `--seed`|`-s` INT  
 
-`--book`|`-b` BOOKWORDLIST  
+`--book`|`-b` TEXTFILE  
 
 `--source`|`-u` SOURCECODE  
+
+`--exercise`|`-e` DIR  
 
 `--list`|`-l`  
 

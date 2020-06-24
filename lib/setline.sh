@@ -17,7 +17,12 @@ setline() {
   done
 
   _nextpos=0
-  makeline
+
+  if [[ -n ${__o[exercise]} && ${#words[@]} -eq 0 ]]; then
+    unset 'nextline[@]'
+  else
+    makeline
+  fi
 
   op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
@@ -66,7 +71,9 @@ makeline() {
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")
     unset 'words[-1]'
-    # ((${#words}<1)) && randomize 100
+
+    [[ -n ${__o[exercise]} && ${#words[@]} -eq 0 ]] \
+      && break
   done
 
 }
