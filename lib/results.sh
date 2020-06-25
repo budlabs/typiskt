@@ -13,13 +13,14 @@ results() {
   tput clear
   tput civis
 
-  acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
+  acc=$(bc -l <<< "scale=3;(100-($_badclicks/$clicksum)*100)")
   wpm=$(bc -l <<< "scale=2;($clicksum/$time)*12")
 
   [[ -d ${__o[exercise]} ]] && ((${acc%.*} > 96 )) && {
     nextex=$((_lastexercise+1<${#exercises[@]}
              ?_lastexercise+1:0))
-
+    
+    mkdir -p "${_exercisefile%/*}"
     echo "$nextex" > "$_exercisefile"
     msg+="\e[${pos[aY]};${pos[aX]}Haccuracy: ${_c[f2]}$acc%${_c[res]}"
     msg+="\e[$((pos[aY]+1));${pos[aX]}Haverage WPM: $wpm"
@@ -89,7 +90,7 @@ results() {
     }
 
     bi=$(printf "%${bx}s" " ")
-    comb=$(sed "s/^/${bi}/g" <<< "$comb")
+    comb="$bi${comb//$'\n'/$'\n'${bi}}"
     comb="$comb"
 
     bh=$(wc -l <<< "$comb")

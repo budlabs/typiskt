@@ -2,50 +2,62 @@
 
 makelist() {
 
-  local list ex exf exd exl
+  local list exd exf tmpf
+  tmpf=$(mktemp)
 
-  if [[ -n ${__o[source]} ]]; then
-    list=${__o[source]}
-    [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < <(wordsfromfile "$list")
-    __o[width]=$(wc -L < "$list")
+  case "$_mode" in
 
-  elif [[ -n ${exd:=${__o[exercise]}} ]]; then
-    [[ -f $exd ]] && exf=$exd && exd=${exf%/*}
-    [[ -d $exd ]] || ERX could not find exercise "$exd"
+    words ) list="$_dir/wordlists/${__o[corpus]:-english}" ;;
 
-    _exercisefile=$TYPISKT_CACHE/excersices/$exd
+    ( book )
+      # list="$_dir/text/${__o[book]}"
+      list=${__o[book]}
+      [[ -f $list ]] || ERX "cannot find $list"
+      wordsfromfile "$list" > "$tmpf"
+      list=$tmpf
+    ;;
 
-    [[ -f $exf ]] || {
-      _lastexercise=0
-      [[ -f $_exercisefile ]] && _lastexercise=$(< "$_exercisefile")
-      < <(find "$exd" -type f -printf '%f\n' | sort -n) \
-        mapfile -t exercises 
+    ( source )
+      list=${__o[source]}
+      [[ -f $list ]] || ERX "cannot find $list"
+      __o[width]=$(wc -L < "$list")
+      wordsfromfile "$list" > "$tmpf"
+      list=$tmpf
+    ;;
 
-      exf="$exd/${exercises[$_lastexercise]}"
-      mkdir -p "${_exercisefile%/*}"
-      echo "$_lastexercise" > "$_exercisefile"
-    }
+    ( exercise )
+      # exd - shorthand for exercise directory/name 
+      # exf - shorthand for exercise file/number
 
-    [[ -f $exf ]] || ERX could not find exercise "$exf"
-    mapfile -t wordlist < "$exf"
+      [[ -f ${exd:=${__o[exercise]}} ]] \
+        && exf=$exd && exd=${exf%/*}
+      [[ -d $exd ]] || ERX could not find exercise "$exd"
 
-  elif [[ -n ${__o[book]} ]]; then
-    list="$_dir/text/${__o[book]}"
-    [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < "$list"
-    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[book]}
-    [[ -f $_bookmarkfile ]] || {
-      mkdir -p "${_bookmarkfile%/*}"
-      echo 0 > "$_bookmarkfile"
-    }
-  else
-    list="$_dir/wordlists/${__o[corpus]:-english}"
-    [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < "$list"
-  fi
- 
+      # file to store index of last exercise
+      _exercisefile=$TYPISKT_CACHE/excersices/$exd
+
+      # if ARG to --exercise is a directory
+      # all files in the dir is added to 'exercises'
+      # array. _lastexercise will be either the
+      # content of _exercisefile or 0
+      # exf=${exercises[$_lastexercise]}
+
+      [[ -f $exf ]] || {
+        _lastexercise=0
+        [[ -f $_exercisefile ]] \
+          && _lastexercise=$(< "$_exercisefile")
+
+        < <(find "$exd" -type f -printf '%f\n' | sort -n) \
+          mapfile -t exercises 
+
+        exf="$exd/${exercises[$_lastexercise]}"
+      }
+
+      list="$exf"
+    ;;
+  esac
+
+  [[ -f $list ]] || ERX "cannot find $list"
+  mapfile -t wordlist < "$list"
+  rm "$tmpf"
 }
-
-
-

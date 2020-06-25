@@ -2,31 +2,31 @@
 
 randomize() {
 
-  local n last next
-  declare -i t
-  n=${1:-100}
-  unset 'words[@]'
-  
+  local last next
+  declare -i t n
 
-  if [[ -n ${__o[book]} ]]; then
+  # 9*time ~ 500wpm
+  n=$((_time*9))
+  unset 'words[@]'
+
+  if ((_prop & m[random])); then
+
+    for ((i=0; i<n; i++)); do
+      next=$((RANDOM%${#wordlist[@]}))
+      ((next == last)) && next=$((RANDOM%${#wordlist[@]}))
+      words+=("$next")
+      last=$next
+    done
+
+  elif ((_prop & m[bookmark])); then
 
     [[ -f $_bookmarkfile ]] && _bookmark=$(< "$_bookmarkfile")
 
     ((n+=_bookmark))
     eval "words=({$n..$_bookmark})"
-
-  elif [[ -n ${__o[source]} || -n ${__o[exercise]} ]]; then
-    t=${#wordlist[@]}
-    eval "words=({$t..0})"
   else
-    declare -a nums
+    t=$((${#wordlist[@]}-1))
     
-    nums=("${!wordlist[@]}")
-    for ((i=0; i<n; i++)); do
-      next=$((RANDOM%${#nums[@]}))
-      ((next == last)) && next=$((RANDOM%${#nums[@]}))
-      words+=("${nums[$next]}")
-      last=$next
-    done
+    eval "words=({$t..0})"
   fi
 }

@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.24.0
-updated: 2020-06-24 by budRich
+typiskt - version: 2020.06.25.28
+updated: 2020-06-25 by budRich
 EOB
 }
 
@@ -33,6 +33,7 @@ main() {
   _dir="${_source%/*}"
   _bookmarkfile=""
   _exercisefile=""
+  _underline=""
 
   ((__o[list])) && listcorpuses
 
@@ -41,6 +42,7 @@ main() {
   declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed _lastexercise _start
+  declare -i _underlinewidth=14
 
   declare -a exercises
   declare -a wordlist  # wordlist as array
@@ -48,18 +50,58 @@ main() {
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
+  declare -A pos
+
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
 
-  makelist
-  initscreen
+  declare -A m # mask array
+  masks=(random difficulty time bookmark linebreak loop)
+  for ((i=0;i<${#masks[@]};i++)); do 
+    m[${masks[$i]}]=$((1<<i))
+  done ; unset 'masks[@]'
 
-  declare -A pos
-  pos[pY]=$(( (_height/2) - 2))
-  pos[aY]=$(( pos[pY]+3 ))
-  pos[aX]=$(( (_width/2) - (_maxW/2) ))
-  pos[tY]=$(( pos[aY]+3 ))
-  pos[tX]=$(( (_width/2) - (5/2) ))
+  _mode=words
+  [[ -n ${__o[exercise]}  ]] && _mode=exercise
+  [[ -n ${__o[source]}    ]] && _mode=source
+  [[ -n ${__o[book]}      ]] && _mode=book
+
+  declare -i _prop # mode prpoperties
+  case "$_mode" in
+    words     ) _prop=$((m[random] | m[difficulty] | m[time] | m[loop])) ;;
+    source    ) _prop=$((m[linebreak])) ;;
+    exercise  ) _prop=$((0)) ;;
+    book      ) _prop=$((m[difficulty] | m[time] | m[bookmark] | m[loop])) ;;
+  esac
+
+  makelist
+
+  ((_prop & m[bookmark])) && {
+    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[$_mode]##*/}
+    [[ -f $_bookmarkfile ]] || {
+      mkdir -p "${_bookmarkfile%/*}"
+      echo 0 > "$_bookmarkfile"
+    }
+  }
+
+  : "${_time:=${__o[time]:-60}}"
+  ((_prop & m[time])) || _time=0
+  
+  ((_prop & m[difficulty])) && {
+
+    _difficulty=$(( __o[difficulty] < 1  ? 0 : 
+                    __o[difficulty] < 11 ? __o[difficulty] :
+                    __o[difficulty] > 10 ? 10 : 0 ))
+
+    ((_difficulty)) && {
+      mapfile -t specials < "$_dir/specials"
+      _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
+    }
+
+  }
+
+  
+  initscreen
 
   declare -A _c
   for k in {0..7}; do 
@@ -72,18 +114,7 @@ main() {
   _c[civis]=$(tput civis)
   _c[cnorm]=$(tput cnorm)
 
-  : "${_time:=${__o[time]:-60}}"
-  [[ -n ${__o[exercise]} ]] && _time=0
   blank=$(printf "%${_width}s" " ")
-
-  _difficulty=$(( __o[difficulty] < 1  ? 0 : 
-                  __o[difficulty] < 11 ? __o[difficulty] :
-                  __o[difficulty] > 10 ? 10 : 0 ))
-
-  ((_difficulty)) && {
-    mapfile -t specials < "$_dir/specials"
-    _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
-  }
 
   while ((_restart)); do
     while ((_restart)); do starttest ; done
@@ -101,9 +132,9 @@ typiskt - touchtype training for dirt-hackers
 SYNOPSIS
 --------
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-typiskt [--book|-b TEXTFILE] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt [--source|-u SOURCECODE] [--width|-w WIDTH]
-typiskt [--exercise|-e DIR] [--width|-w WIDTH]
+typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
+typiskt --source|-u SOURCECODE [--width|-w WIDTH]
+typiskt --exercise|-e DIR|FILE [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -125,7 +156,7 @@ OPTIONS
 
 --source|-u SOURCECODE  
 
---exercise|-e DIR  
+--exercise|-e FILE  
 
 --list|-l  
 
@@ -206,6 +237,19 @@ initscreen() {
   : "${_maxW:=${__o[width]:-$_width}}"
   _maxW=$(((_width-2)<_maxW?_width-2:_maxW))
 
+  pos[pY]=$(( (_height/2) - 2))
+  pos[aY]=$(( pos[pY]+3 ))
+  pos[aX]=$(( (_width/2) - (_maxW/2) ))
+  pos[tY]=$(( pos[aY]+3 ))
+  pos[tX]=$(( (_width/2) - (5/2) ))
+  pos[fY]=$(( pos[pY]+1 ))
+  pos[fX]=$(( (_width/2) - (_underlinewidth/2) ))
+  pos[pX]=$(( pos[fX]+1 ))
+
+  local f
+  f=$(printf "%${_underlinewidth}s" " ")  f=${f// /─}
+  _underline="\e[${pos[fY]};${pos[fX]}H$f"
+
   stty -echo
   tput smcup
   tput civis
@@ -221,53 +265,65 @@ listcorpuses() {
 
 makelist() {
 
-  local list ex exf exd exl
+  local list exd exf tmpf
+  tmpf=$(mktemp)
 
-  if [[ -n ${__o[source]} ]]; then
-    list=${__o[source]}
-    [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < <(wordsfromfile "$list")
-    __o[width]=$(wc -L < "$list")
+  case "$_mode" in
 
-  elif [[ -n ${exd:=${__o[exercise]}} ]]; then
-    [[ -f $exd ]] && exf=$exd && exd=${exf%/*}
-    [[ -d $exd ]] || ERX could not find exercise "$exd"
+    words ) list="$_dir/wordlists/${__o[corpus]:-english}" ;;
 
-    _exercisefile=$TYPISKT_CACHE/excersices/$exd
+    ( book )
+      # list="$_dir/text/${__o[book]}"
+      list=${__o[book]}
+      [[ -f $list ]] || ERX "cannot find $list"
+      wordsfromfile "$list" > "$tmpf"
+      list=$tmpf
+    ;;
 
-    [[ -f $exf ]] || {
-      _lastexercise=0
-      [[ -f $_exercisefile ]] && _lastexercise=$(< "$_exercisefile")
-      < <(find "$exd" -type f -printf '%f\n' | sort -n) \
-        mapfile -t exercises 
+    ( source )
+      list=${__o[source]}
+      [[ -f $list ]] || ERX "cannot find $list"
+      __o[width]=$(wc -L < "$list")
+      wordsfromfile "$list" > "$tmpf"
+      list=$tmpf
+    ;;
 
-      exf="$exd/${exercises[$_lastexercise]}"
-      mkdir -p "${_exercisefile%/*}"
-      echo "$_lastexercise" > "$_exercisefile"
-    }
+    ( exercise )
+      # exd - shorthand for exercise directory/name 
+      # exf - shorthand for exercise file/number
 
-    [[ -f $exf ]] || ERX could not find exercise "$exf"
-    mapfile -t wordlist < "$exf"
+      [[ -f ${exd:=${__o[exercise]}} ]] \
+        && exf=$exd && exd=${exf%/*}
+      [[ -d $exd ]] || ERX could not find exercise "$exd"
 
-  elif [[ -n ${__o[book]} ]]; then
-    list="$_dir/text/${__o[book]}"
-    [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < "$list"
-    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[book]}
-    [[ -f $_bookmarkfile ]] || {
-      mkdir -p "${_bookmarkfile%/*}"
-      echo 0 > "$_bookmarkfile"
-    }
-  else
-    list="$_dir/wordlists/${__o[corpus]:-english}"
-    [[ -f $list ]] || ERX "cannot find $list"
-    mapfile -t wordlist < "$list"
-  fi
- 
+      # file to store index of last exercise
+      _exercisefile=$TYPISKT_CACHE/excersices/$exd
+
+      # if ARG to --exercise is a directory
+      # all files in the dir is added to 'exercises'
+      # array. _lastexercise will be either the
+      # content of _exercisefile or 0
+      # exf=${exercises[$_lastexercise]}
+
+      [[ -f $exf ]] || {
+        _lastexercise=0
+        [[ -f $_exercisefile ]] \
+          && _lastexercise=$(< "$_exercisefile")
+
+        < <(find "$exd" -type f -printf '%f\n' | sort -n) \
+          mapfile -t exercises 
+
+        exf="$exd/${exercises[$_lastexercise]}"
+      }
+
+      list="$exf"
+    ;;
+  esac
+
+  [[ -f $list ]] || ERX "cannot find $list"
+  mapfile -t wordlist < "$list"
+  rm "$tmpf"
 }
-
-
-
 
 nextword() {
 
@@ -288,32 +344,32 @@ nextword() {
 
 randomize() {
 
-  local n last next
-  declare -i t
-  n=${1:-100}
-  unset 'words[@]'
-  
+  local last next
+  declare -i t n
 
-  if [[ -n ${__o[book]} ]]; then
+  # 9*time ~ 500wpm
+  n=$((_time*9))
+  unset 'words[@]'
+
+  if ((_prop & m[random])); then
+
+    for ((i=0; i<n; i++)); do
+      next=$((RANDOM%${#wordlist[@]}))
+      ((next == last)) && next=$((RANDOM%${#wordlist[@]}))
+      words+=("$next")
+      last=$next
+    done
+
+  elif ((_prop & m[bookmark])); then
 
     [[ -f $_bookmarkfile ]] && _bookmark=$(< "$_bookmarkfile")
 
     ((n+=_bookmark))
     eval "words=({$n..$_bookmark})"
-
-  elif [[ -n ${__o[source]} || -n ${__o[exercise]} ]]; then
-    t=${#wordlist[@]}
-    eval "words=({$t..0})"
   else
-    declare -a nums
+    t=$((${#wordlist[@]}-1))
     
-    nums=("${!wordlist[@]}")
-    for ((i=0; i<n; i++)); do
-      next=$((RANDOM%${#nums[@]}))
-      ((next == last)) && next=$((RANDOM%${#nums[@]}))
-      words+=("${nums[$next]}")
-      last=$next
-    done
+    eval "words=({$t..0})"
   fi
 }
 
@@ -330,13 +386,14 @@ results() {
   tput clear
   tput civis
 
-  acc=$(bc -l <<< "scale=2;(100-($_badclicks/$clicksum)*100)")
+  acc=$(bc -l <<< "scale=3;(100-($_badclicks/$clicksum)*100)")
   wpm=$(bc -l <<< "scale=2;($clicksum/$time)*12")
 
   [[ -d ${__o[exercise]} ]] && ((${acc%.*} > 96 )) && {
     nextex=$((_lastexercise+1<${#exercises[@]}
              ?_lastexercise+1:0))
-
+    
+    mkdir -p "${_exercisefile%/*}"
     echo "$nextex" > "$_exercisefile"
     msg+="\e[${pos[aY]};${pos[aX]}Haccuracy: ${_c[f2]}$acc%${_c[res]}"
     msg+="\e[$((pos[aY]+1));${pos[aX]}Haverage WPM: $wpm"
@@ -406,7 +463,7 @@ results() {
     }
 
     bi=$(printf "%${bx}s" " ")
-    comb=$(sed "s/^/${bi}/g" <<< "$comb")
+    comb="$bi${comb//$'\n'/$'\n'${bi}}"
     comb="$comb"
 
     bh=$(wc -l <<< "$comb")
@@ -441,19 +498,13 @@ setline() {
   ((pos[aX])) && indent="$(printf "%${pos[aX]}s" " ")"
 
   unset 'activeline[@]'
-
   for k in "${!nextline[@]}"; do
     activeline[$k]=${nextline[$k]}
     _lastpos=$k
   done
 
   _nextpos=0
-
-  if [[ -n ${__o[exercise]} && ${#words[@]} -eq 0 ]]; then
-    unset 'nextline[@]'
-  else
-    makeline
-  fi
+  makeline
 
   op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
@@ -471,7 +522,8 @@ makeline() {
 
   unset 'nextline[@]'
 
-  while :; do
+  while ((${#words[@]})); do
+    wln=${words[-1]}
     w=${wordlist[${words[-1]}]}
 
     ((_difficulty)) && {
@@ -490,21 +542,22 @@ makeline() {
       fi
 
     }
-   
-    wl=${#w}
 
-    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
     [[ $w = "@@EOL" ]] && {
       unset 'words[-1]'
+      unset "wordlist[$wln]"
       break
     }
 
+    wl=${#w}
+
+    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")
+
     unset 'words[-1]'
 
-    [[ -n ${__o[exercise]} && ${#words[@]} -eq 0 ]] \
-      && break
   done
 
 }
@@ -528,39 +581,26 @@ setstatus() {
 starttest() {
 
   local key c1 c2
-  declare -i  lasttime=-1 status sl cl
+  declare -i lasttime=-1 status sl cl
 
-  _clicks=0  _badclicks=0 _words=0 _start=0
+  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
   _string=""
 
-  # prompt floor
-  local f
-  declare -i fx fy
-  declare -i fw=14   # floor width
-
-  f=$(printf "%${fw}s" " ")  f=${f// /─}
-  fx=$(( (_width/2) - (fw/2) )) fy=$((pos[pY]+1))
-  pos[pX]=$((fx+1))
-
-  op="\e[${fy};${fx}H$f"
+  op=$_underline
 
   [[ -n ${__o[exercise]} ]] && ((pos[pY]>1)) \
-    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($_lastexercise/${#exercises[@]})"
-  
-  # 9*time ~ 500wpm
-  randomize $((_time*9))
+    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($((_lastexercise+1))/${#exercises[@]})"
+
+  randomize
   makeline
   setline
   nextword
   ((_time)) && timer
-  
-  
-  
 
   while : ; do
 
     ((_start && SECONDS>_t && _time)) && break
-    [[ -n ${__o[exercise]} ]] && ((${#wordlist[@]}==_words)) && break 
+    ((_time || ${#wordlist[@]}!=_words)) || break
 
     # update screen
     [[ -n $op ]] && { echo -en "$op" ; op="" ;}
@@ -603,7 +643,7 @@ starttest() {
     # https://askubuntu.com/a/299469
     # backspace key
     elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1)) && continue
+      ((${#_string}<1 && _badclicks++)) && continue
       key=$'\b \b'
       _string=${_string:0:-1}
 
@@ -612,10 +652,29 @@ starttest() {
 
       # penalty for erasing good char
       ((_oldstatus == 1 || _badclicks++)) 
-    # pressing escape will restart the game
     elif [[ $key = $'\u1b' ]]; then
       # catch arrowkeys etc
-      read -rsn2 -t 0.001 && continue 
+      read -rsn2 -t 0.001 key && {
+        # shift exercise
+        [[ $_mode = exercise ]] || continue
+        case "$key" in
+          '[D'|'[A' )  # left/up
+            nextex=$((_lastexercise-1<0
+                     ?${#exercises[@]}-1:_lastexercise-1))
+          ;;
+          '[B'|'[C' )  # down/right
+            nextex=$((_lastexercise+1<${#exercises[@]}
+                     ?_lastexercise+1:0))
+          ;;
+          * ) continue ;;
+        esac
+
+        echo "$nextex" > "$_exercisefile"
+        makelist
+        return
+      }
+
+      # pressing escape will restart the game
       return  
     else
       continue
@@ -650,16 +709,17 @@ timer() {
 wordsfromfile() {
   local f=$1
 
-  awk -v sq="'" '
-  /\S/ {
-    sub(/^\s+$/,"")
-    for (i=1;i<NF+1;i++) {
+  declare -i lb=0
+  ((_prop & m[linebreak])) && lb=1
+
+  awk -v lb=$lb '
+  /./ {
+    for (i=1;i<=NF;i++) {
       word=$i
-      if(word != "") print word
+      print word
     }
-    print "@@EOL"
+    if (lb==1) print "@@EOL"
   }
-  END { print "@@EOF" }
   ' "$f"
 }
 

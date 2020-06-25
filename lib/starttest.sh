@@ -3,39 +3,26 @@
 starttest() {
 
   local key c1 c2
-  declare -i  lasttime=-1 status sl cl
+  declare -i lasttime=-1 status sl cl
 
-  _clicks=0  _badclicks=0 _words=0 _start=0
+  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
   _string=""
 
-  # prompt floor
-  local f
-  declare -i fx fy
-  declare -i fw=14   # floor width
-
-  f=$(printf "%${fw}s" " ")  f=${f// /─}
-  fx=$(( (_width/2) - (fw/2) )) fy=$((pos[pY]+1))
-  pos[pX]=$((fx+1))
-
-  op="\e[${fy};${fx}H$f"
+  op=$_underline
 
   [[ -n ${__o[exercise]} ]] && ((pos[pY]>1)) \
-    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($_lastexercise/${#exercises[@]})"
-  
-  # 9*time ~ 500wpm
-  randomize $((_time*9))
+    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($((_lastexercise+1))/${#exercises[@]})"
+
+  randomize
   makeline
   setline
   nextword
   ((_time)) && timer
-  
-  
-  
 
   while : ; do
 
     ((_start && SECONDS>_t && _time)) && break
-    [[ -n ${__o[exercise]} ]] && ((${#wordlist[@]}==_words)) && break 
+    ((_time || ${#wordlist[@]}!=_words)) || break
 
     # update screen
     [[ -n $op ]] && { echo -en "$op" ; op="" ;}
@@ -78,7 +65,7 @@ starttest() {
     # https://askubuntu.com/a/299469
     # backspace key
     elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1)) && continue
+      ((${#_string}<1 && _badclicks++)) && continue
       key=$'\b \b'
       _string=${_string:0:-1}
 
@@ -87,10 +74,29 @@ starttest() {
 
       # penalty for erasing good char
       ((_oldstatus == 1 || _badclicks++)) 
-    # pressing escape will restart the game
     elif [[ $key = $'\u1b' ]]; then
       # catch arrowkeys etc
-      read -rsn2 -t 0.001 && continue 
+      read -rsn2 -t 0.001 key && {
+        # shift exercise
+        [[ $_mode = exercise ]] || continue
+        case "$key" in
+          '[D'|'[A' )  # left/up
+            nextex=$((_lastexercise-1<0
+                     ?${#exercises[@]}-1:_lastexercise-1))
+          ;;
+          '[B'|'[C' )  # down/right
+            nextex=$((_lastexercise+1<${#exercises[@]}
+                     ?_lastexercise+1:0))
+          ;;
+          * ) continue ;;
+        esac
+
+        echo "$nextex" > "$_exercisefile"
+        makelist
+        return
+      }
+
+      # pressing escape will restart the game
       return  
     else
       continue

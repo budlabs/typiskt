@@ -3,16 +3,17 @@
 wordsfromfile() {
   local f=$1
 
-  awk -v sq="'" '
-  /\S/ {
-    sub(/^\s+$/,"")
-    for (i=1;i<NF+1;i++) {
+  declare -i lb=0
+  ((_prop & m[linebreak])) && lb=1
+
+  awk -v lb=$lb '
+  /./ {
+    for (i=1;i<=NF;i++) {
       word=$i
-      if(word != "") print word
+      print word
     }
-    print "@@EOL"
+    if (lb==1) print "@@EOL"
   }
-  END { print "@@EOF" }
   ' "$f"
 }
 

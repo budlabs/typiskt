@@ -17,6 +17,7 @@ main() {
   _dir="${_source%/*}"
   _bookmarkfile=""
   _exercisefile=""
+  _underline=""
 
   ((__o[list])) && listcorpuses
 
@@ -25,6 +26,7 @@ main() {
   declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed _lastexercise _start
+  declare -i _underlinewidth=14
 
   declare -a exercises
   declare -a wordlist  # wordlist as array
@@ -32,18 +34,58 @@ main() {
   declare -a specials  # specialsfile as array
   declare -a nextline activeline
 
+  declare -A pos
+
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
 
-  makelist
-  initscreen
+  declare -A m # mask array
+  masks=(random difficulty time bookmark linebreak loop)
+  for ((i=0;i<${#masks[@]};i++)); do 
+    m[${masks[$i]}]=$((1<<i))
+  done ; unset 'masks[@]'
 
-  declare -A pos
-  pos[pY]=$(( (_height/2) - 2))
-  pos[aY]=$(( pos[pY]+3 ))
-  pos[aX]=$(( (_width/2) - (_maxW/2) ))
-  pos[tY]=$(( pos[aY]+3 ))
-  pos[tX]=$(( (_width/2) - (5/2) ))
+  _mode=words
+  [[ -n ${__o[exercise]}  ]] && _mode=exercise
+  [[ -n ${__o[source]}    ]] && _mode=source
+  [[ -n ${__o[book]}      ]] && _mode=book
+
+  declare -i _prop # mode prpoperties
+  case "$_mode" in
+    words     ) _prop=$((m[random] | m[difficulty] | m[time] | m[loop])) ;;
+    source    ) _prop=$((m[linebreak])) ;;
+    exercise  ) _prop=$((0)) ;;
+    book      ) _prop=$((m[difficulty] | m[time] | m[bookmark] | m[loop])) ;;
+  esac
+
+  makelist
+
+  ((_prop & m[bookmark])) && {
+    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[$_mode]##*/}
+    [[ -f $_bookmarkfile ]] || {
+      mkdir -p "${_bookmarkfile%/*}"
+      echo 0 > "$_bookmarkfile"
+    }
+  }
+
+  : "${_time:=${__o[time]:-60}}"
+  ((_prop & m[time])) || _time=0
+  
+  ((_prop & m[difficulty])) && {
+
+    _difficulty=$(( __o[difficulty] < 1  ? 0 : 
+                    __o[difficulty] < 11 ? __o[difficulty] :
+                    __o[difficulty] > 10 ? 10 : 0 ))
+
+    ((_difficulty)) && {
+      mapfile -t specials < "$_dir/specials"
+      _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
+    }
+
+  }
+
+  
+  initscreen
 
   declare -A _c
   for k in {0..7}; do 
@@ -56,18 +98,7 @@ main() {
   _c[civis]=$(tput civis)
   _c[cnorm]=$(tput cnorm)
 
-  : "${_time:=${__o[time]:-60}}"
-  [[ -n ${__o[exercise]} ]] && _time=0
   blank=$(printf "%${_width}s" " ")
-
-  _difficulty=$(( __o[difficulty] < 1  ? 0 : 
-                  __o[difficulty] < 11 ? __o[difficulty] :
-                  __o[difficulty] > 10 ? 10 : 0 ))
-
-  ((_difficulty)) && {
-    mapfile -t specials < "$_dir/specials"
-    _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
-  }
 
   while ((_restart)); do
     while ((_restart)); do starttest ; done
