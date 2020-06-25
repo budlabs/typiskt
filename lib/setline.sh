@@ -41,15 +41,15 @@ makeline() {
     ((_difficulty)) && {
 
       j=$((RANDOM%_difficulty ))
-      if [[ -n ${specials[$j]} ]]; then
-        w=${specials[$j]/W/$w}
-      elif ((j == (${#specials[@]}+1) )); then
+      if [[ -n ${wordmasks[$j]} ]]; then
+        w=${wordmasks[$j]/W/$w}
+      elif ((j == (${#wordmasks[@]}+1) )); then
         w="$((RANDOM%1111111))"
-      elif ((j == (${#specials[@]}+2) )); then
+      elif ((j == (${#wordmasks[@]}+2) )); then
         w=budlabs
-      elif ((j == (${#specials[@]}+3) )); then
+      elif ((j == (${#wordmasks[@]}+3) )); then
         w="${w^}"
-      elif ((j == (${#specials[@]}+4) )); then
+      elif ((j == (${#wordmasks[@]}+4) )); then
         w="${w^^}"
       fi
 

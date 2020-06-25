@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.25.28
+typiskt - version: 2020.06.25.30
 updated: 2020-06-25 by budRich
 EOB
 }
@@ -94,8 +94,8 @@ main() {
                     __o[difficulty] > 10 ? 10 : 0 ))
 
     ((_difficulty)) && {
-      mapfile -t specials < "$_dir/specials"
-      _difficulty=$(( ${#specials[@]} * ((11-_difficulty) +4) ))
+      mapfile -t wordmasks < "$_dir/wordmasks"
+      _difficulty=$(( ${#wordmasks[@]} * ((11-_difficulty) +4) ))
     }
 
   }
@@ -529,15 +529,15 @@ makeline() {
     ((_difficulty)) && {
 
       j=$((RANDOM%_difficulty ))
-      if [[ -n ${specials[$j]} ]]; then
-        w=${specials[$j]/W/$w}
-      elif ((j == (${#specials[@]}+1) )); then
+      if [[ -n ${wordmasks[$j]} ]]; then
+        w=${wordmasks[$j]/W/$w}
+      elif ((j == (${#wordmasks[@]}+1) )); then
         w="$((RANDOM%1111111))"
-      elif ((j == (${#specials[@]}+2) )); then
+      elif ((j == (${#wordmasks[@]}+2) )); then
         w=budlabs
-      elif ((j == (${#specials[@]}+3) )); then
+      elif ((j == (${#wordmasks[@]}+3) )); then
         w="${w^}"
-      elif ((j == (${#specials[@]}+4) )); then
+      elif ((j == (${#wordmasks[@]}+4) )); then
         w="${w^^}"
       fi
 
