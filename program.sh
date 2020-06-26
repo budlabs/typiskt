@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.26.45
+typiskt - version: 2020.06.26.71
 updated: 2020-06-26 by budRich
 EOB
 }
@@ -11,8 +11,11 @@ EOB
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${TYPISKT_CONFIG:=$XDG_CONFIG_HOME/typiskt/config}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
+: "${TYPISKT_WIDTH:=50}"
+: "${TYPISKT_WORDLIST:=english}"
 : "${TYPISKT_MIN_ACC:=96}"
 : "${TYPISKT_MIN_WPM:=0}"
 
@@ -77,6 +80,7 @@ main() {
     book      ) _prop=$((m[difficulty] | m[time] | m[bookmark] | m[loop])) ;;
   esac
 
+  parseconfig
   makelist
 
   ((_prop & m[bookmark])) && {
@@ -201,6 +205,48 @@ cleanup() {
   exit 0
 }
 
+createconf() {
+local trgdir="$1"
+declare -a aconfdirs
+
+aconfdirs=(
+)
+
+mkdir -p "$1" "${aconfdirs[@]}"
+
+cat << 'EOCONF' > "$trgdir/config"
+# can also be set with --corpus commandlineoption
+# or environment variable TYPISKT_WORDLIST
+# list wordlists with --list commandlineoption
+default-wordlist = english-advanced
+
+# can also be set with --width commandlineoption
+# or environment variable TYPISKT_WIDTH
+# maximum width (in columns) of lines
+# if max-width > COLUMNS-2, max-width=COLUMNS-2
+maxwidth = 50
+
+# can also be set environment variable TYPISKT_CACHE
+# path where to store chache files like highscores
+cache-dir = ~/.cache/typiskt
+
+# can also be set environment variable TYPISKT_TIME_FORMAT
+# Time format to use in highscore list, see date(1)
+# for more format options
+highscore-time-format = %y/%m/%d
+
+# in excercise mode minimum must be reached to
+# procees to the next exercise. (0=no minimum)
+# can also be set environment variable TYPISKT_MIN_ACC
+exercise-minimum-accuracy = 96
+# can also be set environment variable TYPISKT_MIN_WPM
+exercise-minimum-wpm = 0
+
+# syntax:ssHash
+EOCONF
+
+}
+
 set -E
 trap '[ "$?" -ne 77 ] || exit 77' ERR
 
@@ -252,7 +298,7 @@ initscreen() {
   read -r _height _width < <(stty size)
 
   # max width, set with -w or default to width-2
-  : "${_maxW:=${__o[width]:-50}}"
+  : "${_maxW:=${__o[width]:-$TYPISKT_WIDTH}}"
   _maxW=$(( (_width-2)<_maxW?_width-2:_maxW ))
 
   pos[pY]=$(( (_height/2) - 2))
@@ -290,7 +336,7 @@ makelist() {
 
   case "$_mode" in
 
-    words ) list="$_dir/wordlists/${__o[corpus]:-english}" ;;
+    words ) list="$_dir/wordlists/${__o[corpus]:-$TYPISKT_WORDLIST}" ;;
 
     ( book )
       # list="$_dir/text/${__o[book]}"
@@ -364,6 +410,32 @@ nextword() {
 
 }
 
+parseconfig() {
+  
+  local line re sp ns k v
+
+  [[ -f $TYPISKT_CONFIG ]] \
+    || createconf "${TYPISKT_CONFIG%/*}"
+
+  sp='[[:space:]]' ns='[^[:space:]]'
+  re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
+
+  while read -r line ; do [[ $line =~ $re ]] && {
+
+    k=${BASH_REMATCH[1]} v=${BASH_REMATCH[2]}
+
+    case "$k" in
+      default-wordlist          ) TYPISKT_WORDLIST=$v      ;;
+      maxwidth                  ) TYPISKT_WIDTH=$v         ;;
+      cache-dir                 ) TYPISKT_CACHE=${v/'~'/~} ;;
+      highscore-time-format     ) TYPISKT_TIME_FORMAT=$v   ;;
+      exercise-minimum-accuracy ) TYPISKT_MIN_ACC=$v       ;;
+      exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
+    esac
+
+  } ; done < "$TYPISKT_CONFIG"
+}
+
 randomize() {
 
   local last next
@@ -418,7 +490,7 @@ results() {
 
     ( source )
       declare filename=${__o[source]##*/}
-      msg+="$filename containing ${#wordlist} words\n"
+      msg+="$filename containing ${_words} words\n"
       msg+="was typed in $time seconds\n\n"
       msg+="with an average WPM of ${wpm}\n"
       msg+="${acc:0:-2}% accurate."
@@ -438,7 +510,6 @@ results() {
 
       tput clear
       msg=$(centerblock "$msg")
-      makelist
     ;;
 
     ( exercise )
@@ -558,7 +629,7 @@ setline() {
   _nextpos=0
   makeline
 
-  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
   op+="$indent${nextline[*]}"
 
@@ -654,6 +725,10 @@ starttest() {
 
     op+="    "
   }
+  
+  # when linebreaks are used, a new list have to be
+  # generated each game
+  ((_prop & m[linebreak])) && makelist
 
   randomize
   makeline

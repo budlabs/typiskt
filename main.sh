@@ -59,6 +59,7 @@ main() {
     book      ) _prop=$((m[difficulty] | m[time] | m[bookmark] | m[loop])) ;;
   esac
 
+  parseconfig
   makelist
 
   ((_prop & m[bookmark])) && {

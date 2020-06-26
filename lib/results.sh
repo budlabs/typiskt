@@ -23,7 +23,7 @@ results() {
 
     ( source )
       declare filename=${__o[source]##*/}
-      msg+="$filename containing ${#wordlist} words\n"
+      msg+="$filename containing ${_words} words\n"
       msg+="was typed in $time seconds\n\n"
       msg+="with an average WPM of ${wpm}\n"
       msg+="${acc:0:-2}% accurate."
@@ -43,7 +43,6 @@ results() {
 
       tput clear
       msg=$(centerblock "$msg")
-      makelist
     ;;
 
     ( exercise )

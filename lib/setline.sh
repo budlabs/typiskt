@@ -18,7 +18,7 @@ setline() {
   _nextpos=0
   makeline
 
-  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
   op+="$indent${nextline[*]}"
 

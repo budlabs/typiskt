@@ -1,0 +1,27 @@
+#!/bin/bash
+
+parseconfig() {
+  
+  local line re sp ns k v
+
+  [[ -f $TYPISKT_CONFIG ]] \
+    || createconf "${TYPISKT_CONFIG%/*}"
+
+  sp='[[:space:]]' ns='[^[:space:]]'
+  re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
+
+  while read -r line ; do [[ $line =~ $re ]] && {
+
+    k=${BASH_REMATCH[1]} v=${BASH_REMATCH[2]}
+
+    case "$k" in
+      default-wordlist          ) TYPISKT_WORDLIST=$v      ;;
+      maxwidth                  ) TYPISKT_WIDTH=$v         ;;
+      cache-dir                 ) TYPISKT_CACHE=${v/'~'/~} ;;
+      highscore-time-format     ) TYPISKT_TIME_FORMAT=$v   ;;
+      exercise-minimum-accuracy ) TYPISKT_MIN_ACC=$v       ;;
+      exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
+    esac
+
+  } ; done < "$TYPISKT_CONFIG"
+}

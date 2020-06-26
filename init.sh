@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.26.45
+typiskt - version: 2020.06.26.71
 updated: 2020-06-26 by budRich
 EOB
 }
@@ -11,8 +11,11 @@ EOB
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${TYPISKT_CONFIG:=$XDG_CONFIG_HOME/typiskt/config}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
+: "${TYPISKT_WIDTH:=50}"
+: "${TYPISKT_WORDLIST:=english}"
 : "${TYPISKT_MIN_ACC:=96}"
 : "${TYPISKT_MIN_WPM:=0}"
 

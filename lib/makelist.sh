@@ -7,7 +7,7 @@ makelist() {
 
   case "$_mode" in
 
-    words ) list="$_dir/wordlists/${__o[corpus]:-english}" ;;
+    words ) list="$_dir/wordlists/${__o[corpus]:-$TYPISKT_WORDLIST}" ;;
 
     ( book )
       # list="$_dir/text/${__o[book]}"

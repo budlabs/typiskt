@@ -53,6 +53,10 @@ ENVIRONMENT
 
 defaults to: $HOME/.config
 
+`TYPISKT_CONFIG`  
+
+defaults to: $XDG_CONFIG_HOME/typiskt/config
+
 `TYPISKT_CACHE`  
 
 defaults to: $HOME/.cache/typiskt
@@ -60,6 +64,14 @@ defaults to: $HOME/.cache/typiskt
 `TYPISKT_TIME_FORMAT`  
 
 defaults to: "%y/%m/%d"
+
+`TYPISKT_WIDTH`  
+
+defaults to: 50
+
+`TYPISKT_WORDLIST`  
+
+defaults to: english
 
 `TYPISKT_MIN_ACC`  
 
