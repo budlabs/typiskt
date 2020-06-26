@@ -2,7 +2,7 @@
 
 starttest() {
 
-  local key c1 c2
+  local key c1 c2 exd
   declare -i lasttime=-1 status sl cl
 
   _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
@@ -10,8 +10,20 @@ starttest() {
 
   op=$_underline
 
-  [[ -n ${__o[exercise]} ]] && ((pos[pY]>1)) \
-    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($((_lastexercise+1))/${#exercises[@]})"
+  [[ -n ${exd:=${__o[exercise]}} ]] && ((pos[pY]>1)) && {
+
+    op+="\e[1;1Hexercise ${exd##*/} "
+    op+="($((_lastexercise+1))/${#exercises[@]}) "
+
+    local lwpm # last wpm on current exercise
+    [[ -f ${lwpm:=$TYPISKT_CACHE/$_listhash} ]] && {
+      lwpm=$( < "$lwpm" )
+      lwpm=${lwpm:0:-1}
+      op+="best WPM: $lwpm"
+    }
+
+    op+="    "
+  }
 
   randomize
   makeline
@@ -37,7 +49,7 @@ starttest() {
       _string+=$key
 
       # start the timer
-      ((_start)) || { _start=$SECONDS ; _t=$((_time+SECONDS)) ;}
+      ((_start)) || { _start=$SECONDS ; _t=$((_time+_start)) ;}
 
       nextchar=${_activeword:$((${#_string}-1)):1}
       [[ $key = "$nextchar" ]] && status=$_oldstatus \
@@ -74,6 +86,8 @@ starttest() {
 
       # penalty for erasing good char
       ((_oldstatus == 1 || _badclicks++)) 
+
+    # escape sequence
     elif [[ $key = $'\u1b' ]]; then
       # catch arrowkeys etc
       read -rsn2 -t 0.001 key && {
@@ -85,8 +99,16 @@ starttest() {
                      ?${#exercises[@]}-1:_lastexercise-1))
           ;;
           '[B'|'[C' )  # down/right
-            nextex=$((_lastexercise+1<${#exercises[@]}
-                     ?_lastexercise+1:0))
+            cheating="${_exercisefile%/*}/$_listhash"
+            if [[ -f $cheating ]]; then
+              nextex=$((_lastexercise+1<${#exercises[@]}
+                       ?_lastexercise+1:0))
+            else
+              echo -en "${_c[civis]}${_c[sc]}\e[$_height;0H${_c[f1]}NO CHEATING${_c[res]}"
+              read -rsn 1
+              echo -en "\e[$_height;0H$blank${_c[rc]}${_c[norm]}"
+              continue
+            fi
           ;;
           * ) continue ;;
         esac
@@ -96,7 +118,7 @@ starttest() {
         return
       }
 
-      # pressing escape will restart the game
+      # pressing escape alone will restart the game
       return  
     else
       continue

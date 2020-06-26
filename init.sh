@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.25.30
-updated: 2020-06-25 by budRich
+typiskt - version: 2020.06.26.45
+updated: 2020-06-26 by budRich
 EOB
 }
 
@@ -13,6 +13,8 @@ EOB
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
+: "${TYPISKT_MIN_ACC:=96}"
+: "${TYPISKT_MIN_WPM:=0}"
 
 
 ___printhelp(){

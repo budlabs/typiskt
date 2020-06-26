@@ -18,6 +18,7 @@ main() {
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
+  _listhash=""
 
   ((__o[list])) && listcorpuses
 
@@ -29,9 +30,9 @@ main() {
   declare -i _underlinewidth=14
 
   declare -a exercises
-  declare -a wordlist  # wordlist as array
-  declare -a words     # ${wordlist[${words[-1]}]}=next
-  declare -a specials  # specialsfile as array
+  declare -a wordlist   # wordlist as array
+  declare -a words      # ${wordlist[${words[-1]}]}=next
+  declare -a wordmasks  # specialsfile as array
   declare -a nextline activeline
 
   declare -A pos
@@ -97,8 +98,6 @@ main() {
   _c[rc]=$(tput rc)
   _c[civis]=$(tput civis)
   _c[cnorm]=$(tput cnorm)
-
-  blank=$(printf "%${_width}s" " ")
 
   while ((_restart)); do
     while ((_restart)); do starttest ; done

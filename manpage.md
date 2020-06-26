@@ -61,6 +61,14 @@ defaults to: $HOME/.cache/typiskt
 
 defaults to: "%y/%m/%d"
 
+`TYPISKT_MIN_ACC`  
+
+defaults to: 96
+
+`TYPISKT_MIN_WPM`  
+
+defaults to: 0
+
 DEPENDENCIES
 ------------
 `bash`

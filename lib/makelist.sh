@@ -2,7 +2,7 @@
 
 makelist() {
 
-  local list exd exf tmpf
+  local list exd exf tmpf exh
   tmpf=$(mktemp)
 
   case "$_mode" in
@@ -29,12 +29,13 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -f ${exd:=${__o[exercise]}} ]] \
-        && exf=$exd && exd=${exf%/*}
-      [[ -d $exd ]] || ERX could not find exercise "$exd"
+      [[ -d ${exd:=${__o[exercise]}} ]] \
+        || ERX could not find exercise "$exd"
 
+      exd=$(readlink -f "$exd")
+      exh=$(echo -n "$exd" | md5sum | cut -f1 -d' ')
       # file to store index of last exercise
-      _exercisefile=$TYPISKT_CACHE/excersices/$exd
+      _exercisefile=$TYPISKT_CACHE/$exh
 
       # if ARG to --exercise is a directory
       # all files in the dir is added to 'exercises'
@@ -58,6 +59,7 @@ makelist() {
   esac
 
   [[ -f $list ]] || ERX "cannot find $list"
+  _listhash=$(md5sum "$list" | cut -f1 -d' ')
   mapfile -t wordlist < "$list"
   rm "$tmpf"
 }
