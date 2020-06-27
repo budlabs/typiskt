@@ -82,7 +82,9 @@ results() {
 
       tput clear
 
-      score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
+      declare -i dif
+      dif=${__o[difficulty]:-0}
+      score=$(bc <<< "scale=2;100*((($wpm*$acc)/100)+1+$dif)")
       score=${score%.*}
 
       block=$(

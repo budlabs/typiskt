@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.26.71
-updated: 2020-06-26 by budRich
+typiskt - version: 2020.06.27.3
+updated: 2020-06-27 by budRich
 EOB
 }
 
@@ -81,12 +81,14 @@ main() {
   esac
 
   parseconfig
+
+  [[ -d $TYPISKT_CACHE ]] || mkdir -p "$TYPISKT_CACHE"
+
   makelist
 
   ((_prop & m[bookmark])) && {
-    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[$_mode]##*/}
+    _bookmarkfile="$TYPISKT_CACHE/$_listhash"
     [[ -f $_bookmarkfile ]] || {
-      mkdir -p "${_bookmarkfile%/*}"
       echo 0 > "$_bookmarkfile"
     }
   }
@@ -139,7 +141,7 @@ SYNOPSIS
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR|FILE [--width|-w WIDTH]
+typiskt --exercise|-e DIR [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -161,7 +163,7 @@ OPTIONS
 
 --source|-u SOURCECODE  
 
---exercise|-e FILE  
+--exercise|-e DIR  
 
 --list|-l  
 
@@ -210,10 +212,56 @@ local trgdir="$1"
 declare -a aconfdirs
 
 aconfdirs=(
+"$trgdir/exercises"
 )
 
 mkdir -p "$1" "${aconfdirs[@]}"
 
+cat << 'EOCONF' > "$trgdir/exercises/add-gtypist-exercises.sh"
+
+trap 'rm "$tmp"' EXIT
+
+_source="$(readlink -f "${BASH_SOURCE[0]}")"
+d="${_source%/*}"
+
+url='https://github.com/inaimathi/gtypist-single-space/raw/master/gtypist.typ'
+tmp=$(mktemp)
+
+mkdir -p "${tmp%/*}"
+wget -qO "$tmp" "$url" || exit
+
+awk -v d=$d '
+  match($0,/\s*\*:_(.+)/,ma)   {f=d "/" ma[1]}
+  match($0,/^\s*[SD]:(.+)/,ma) {get=1; print ma[1] >> f }
+  /^$/ {get=0}
+  get == 1 && match($0,/\s*:(.+)/,ma) {print ma[1] >> f }
+
+' "$tmp"
+
+declare -i c
+
+for f in "$d"/* ; do
+  [[ ${f##*/} =~ ([^C])_R_L([0-9]+) ]] && {
+    name=${BASH_REMATCH[1]}
+    num=${BASH_REMATCH[2]}
+    mkdir -p "$d/$name"
+    tf=$d/$name/$num
+    awk -v f=$tf '{for (i=1;i<=NF;i++) {print $i >> f}}' "$f"
+    rm "$f"
+  }
+
+  [[ ${f##*/} =~ C_R_.+ ]] && {
+    name=C
+    num=$((c++))
+    mkdir -p "$d/$name"
+    tf=$d/$name/$num
+    awk -v f=$tf '{for (i=1;i<=NF;i++) {print $i >> f}}' "$f"
+    rm "$f"
+  }
+done
+EOCONF
+
+chmod +x "$trgdir/exercises/add-gtypist-exercises.sh"
 cat << 'EOCONF' > "$trgdir/config"
 # can also be set with --corpus commandlineoption
 # or environment variable TYPISKT_WORDLIST
@@ -226,20 +274,20 @@ default-wordlist = english-advanced
 # if max-width > COLUMNS-2, max-width=COLUMNS-2
 maxwidth = 50
 
-# can also be set environment variable TYPISKT_CACHE
+# can also be set with environment variable TYPISKT_CACHE
 # path where to store chache files like highscores
 cache-dir = ~/.cache/typiskt
 
-# can also be set environment variable TYPISKT_TIME_FORMAT
+# can also be set with environment variable TYPISKT_TIME_FORMAT
 # Time format to use in highscore list, see date(1)
 # for more format options
 highscore-time-format = %y/%m/%d
 
 # in excercise mode minimum must be reached to
-# procees to the next exercise. (0=no minimum)
-# can also be set environment variable TYPISKT_MIN_ACC
+# proceed to the next exercise. (0=no minimum)
+# can also be set with environment variable TYPISKT_MIN_ACC
 exercise-minimum-accuracy = 96
-# can also be set environment variable TYPISKT_MIN_WPM
+# can also be set with environment variable TYPISKT_MIN_WPM
 exercise-minimum-wpm = 0
 
 # syntax:ssHash
@@ -358,7 +406,7 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -d ${exd:=${__o[exercise]}} ]] \
+      [[ -d ${exd:=${TYPISKT_CONFIG%/*}/exercises/${__o[exercise]}} ]] \
         || ERX could not find exercise "$exd"
 
       exd=$(readlink -f "$exd")
@@ -549,7 +597,9 @@ results() {
 
       tput clear
 
-      score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
+      declare -i dif
+      dif=${__o[difficulty]:-0}
+      score=$(bc <<< "scale=2;100*((($wpm*$acc)/100)+1+$dif)")
       score=${score%.*}
 
       block=$(
@@ -721,7 +771,8 @@ starttest() {
       lwpm=$( < "$lwpm" )
       lwpm=${lwpm:0:-1}
       op+="best WPM: $lwpm"
-    }
+      :
+    } || op+="               "
 
     op+="    "
   }
@@ -782,7 +833,7 @@ starttest() {
     # https://askubuntu.com/a/299469
     # backspace key
     elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1 && _badclicks++)) && continue
+      ((${#_string}<1 && ++_badclicks)) && continue
       key=$'\b \b'
       _string=${_string:0:-1}
 

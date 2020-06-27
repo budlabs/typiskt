@@ -20,7 +20,8 @@ starttest() {
       lwpm=$( < "$lwpm" )
       lwpm=${lwpm:0:-1}
       op+="best WPM: $lwpm"
-    }
+      :
+    } || op+="               "
 
     op+="    "
   }
@@ -81,7 +82,7 @@ starttest() {
     # https://askubuntu.com/a/299469
     # backspace key
     elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1 && _badclicks++)) && continue
+      ((${#_string}<1 && ++_badclicks)) && continue
       key=$'\b \b'
       _string=${_string:0:-1}
 

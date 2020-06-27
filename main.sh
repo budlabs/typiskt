@@ -60,12 +60,14 @@ main() {
   esac
 
   parseconfig
+
+  [[ -d $TYPISKT_CACHE ]] || mkdir -p "$TYPISKT_CACHE"
+
   makelist
 
   ((_prop & m[bookmark])) && {
-    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[$_mode]##*/}
+    _bookmarkfile="$TYPISKT_CACHE/$_listhash"
     [[ -f $_bookmarkfile ]] || {
-      mkdir -p "${_bookmarkfile%/*}"
       echo 0 > "$_bookmarkfile"
     }
   }

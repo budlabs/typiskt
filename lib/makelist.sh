@@ -29,7 +29,7 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -d ${exd:=${__o[exercise]}} ]] \
+      [[ -d ${exd:=${TYPISKT_CONFIG%/*}/exercises/${__o[exercise]}} ]] \
         || ERX could not find exercise "$exd"
 
       exd=$(readlink -f "$exd")

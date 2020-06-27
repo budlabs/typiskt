@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.26.71
-updated: 2020-06-26 by budRich
+typiskt - version: 2020.06.27.3
+updated: 2020-06-27 by budRich
 EOB
 }
 
@@ -31,7 +31,7 @@ SYNOPSIS
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR|FILE [--width|-w WIDTH]
+typiskt --exercise|-e DIR [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -53,7 +53,7 @@ OPTIONS
 
 --source|-u SOURCECODE  
 
---exercise|-e FILE  
+--exercise|-e DIR  
 
 --list|-l  
 
