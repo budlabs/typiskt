@@ -3,29 +3,22 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.25.33
-updated: 2020-06-25 by budRich
+typiskt - version: 2020.06.28.2
+updated: 2020-06-28 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${TYPISKT_CONFIG:=$XDG_CONFIG_HOME/typiskt/config}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
+: "${TYPISKT_WIDTH:=50}"
+: "${TYPISKT_WORDLIST:=english}"
+: "${TYPISKT_MIN_ACC:=96}"
+: "${TYPISKT_MIN_WPM:=0}"
 
-
-#
-# 2020 June 14
-#
-# The author disclaims copyright to this source code.
-# In place of a legal notice, here is a blessing:
-#
-#    May you do good and not evil.
-#    May you find forgiveness for yourself and forgive others.
-#    May you share freely, never taking more than you give.
-#
-###############################################################
 
 main() {
 
@@ -34,6 +27,7 @@ main() {
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
+  _listhash=""
 
   ((__o[list])) && listcorpuses
 
@@ -74,12 +68,15 @@ main() {
     book      ) _prop=$((m[difficulty] | m[time] | m[bookmark] | m[loop])) ;;
   esac
 
+  parseconfig
+
+  [[ -d $TYPISKT_CACHE ]] || mkdir -p "$TYPISKT_CACHE"
+
   makelist
 
   ((_prop & m[bookmark])) && {
-    _bookmarkfile=$TYPISKT_CACHE/bookmarks/${__o[$_mode]##*/}
+    _bookmarkfile="$TYPISKT_CACHE/$_listhash"
     [[ -f $_bookmarkfile ]] || {
-      mkdir -p "${_bookmarkfile%/*}"
       echo 0 > "$_bookmarkfile"
     }
   }
@@ -114,8 +111,6 @@ main() {
   _c[civis]=$(tput civis)
   _c[cnorm]=$(tput cnorm)
 
-  blank=$(printf "%${_width}s" " ")
-
   while ((_restart)); do
     while ((_restart)); do starttest ; done
     results
@@ -134,7 +129,7 @@ SYNOPSIS
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
 typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR|FILE [--width|-w WIDTH]
+typiskt --exercise|-e DIR [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -156,7 +151,7 @@ OPTIONS
 
 --source|-u SOURCECODE  
 
---exercise|-e FILE  
+--exercise|-e DIR  
 
 --list|-l  
 
@@ -170,6 +165,24 @@ EOB
 }
 
 
+centerblock() {
+
+  local b indent=""
+
+  b=$(echo -en "$1")
+  declare -i bw bh x y
+
+  read -r bh bw _ < <(wc -lL <<< "$b")
+  x=$(( bw>_width  ? 0: (_width/2)-(bw/2)  ))
+  y=$(( bh>_height ? 0: (_height/2)-(bh/2) ))
+
+  indent=$(printf "%${x}s" " ")
+  b="$indent${b//$'\n'/$'\n'${indent}}"
+
+  echo -en "\e[$y;0H$b"
+
+}
+
 cleanup() {
   # clear out standard input
   read -rt 0.001 && cat </dev/stdin>/dev/null
@@ -180,6 +193,98 @@ cleanup() {
   stty echo
   tput sgr0
   exit 0
+}
+
+createconf() {
+local trgdir="$1"
+declare -a aconfdirs
+
+aconfdirs=(
+"$trgdir/exercises"
+)
+
+mkdir -p "$1" "${aconfdirs[@]}"
+
+cat << 'EOCONF' > "$trgdir/exercises/add-gtypist-exercises.sh"
+
+trap 'rm "$tmp"' EXIT
+
+_source="$(readlink -f "${BASH_SOURCE[0]}")"
+d="${_source%/*}"
+
+url='https://github.com/inaimathi/gtypist-single-space/raw/master/gtypist.typ'
+tmp=$(mktemp)
+
+mkdir -p "${tmp%/*}"
+wget -qO "$tmp" "$url" || exit
+
+awk -v d=$d '
+  match($0,/\s*\*:_(.+)/,ma)   {f=d "/" ma[1]}
+  match($0,/^\s*[SD]:(.+)/,ma) {get=1; print ma[1] >> f }
+  /^$/ {get=0}
+  get == 1 && match($0,/\s*:(.+)/,ma) {print ma[1] >> f }
+
+' "$tmp"
+
+declare -i c
+
+for f in "$d"/* ; do
+  [[ ${f##*/} =~ ([^C])_R_L([0-9]+) ]] && {
+    name=${BASH_REMATCH[1]}
+    num=${BASH_REMATCH[2]}
+    mkdir -p "$d/$name"
+    tf=$d/$name/$num
+    awk -v f=$tf '{for (i=1;i<=NF;i++) {print $i >> f}}' "$f"
+    rm "$f"
+  }
+
+  [[ ${f##*/} =~ C_R_.+ ]] && {
+    name=C
+    num=$((c++))
+    mkdir -p "$d/$name"
+    tf=$d/$name/$num
+    awk -v f=$tf '{for (i=1;i<=NF;i++) {print $i >> f}}' "$f"
+    rm "$f"
+  }
+done
+EOCONF
+
+chmod +x "$trgdir/exercises/add-gtypist-exercises.sh"
+cat << 'EOCONF' > "$trgdir/exercises/README.md"
+when **typiskt** is executed with the `--exercise ARG` option, it will look in this directory for a sub directory with the same name as ARG. **typiskt** doesn't come with any exercises, but executing the script: `add-gtypist-exercises.sh` will download and convert the default English exercises from <https://github.com/inaimathi/gtypist-single-space>, and add them to this directory.
+EOCONF
+
+cat << 'EOCONF' > "$trgdir/config"
+# can also be set with --corpus commandlineoption
+# or environment variable TYPISKT_WORDLIST
+# list wordlists with --list commandlineoption
+default-wordlist = english-advanced
+
+# can also be set with --width commandlineoption
+# or environment variable TYPISKT_WIDTH
+# maximum width (in columns) of lines
+# if max-width > COLUMNS-2, max-width=COLUMNS-2
+maxwidth = 50
+
+# can also be set with environment variable TYPISKT_CACHE
+# path where to store chache files like highscores
+cache-dir = ~/.cache/typiskt
+
+# can also be set with environment variable TYPISKT_TIME_FORMAT
+# Time format to use in highscore list, see date(1)
+# for more format options
+highscore-time-format = %y/%m/%d
+
+# in excercise mode minimum must be reached to
+# proceed to the next exercise. (0=no minimum)
+# can also be set with environment variable TYPISKT_MIN_ACC
+exercise-minimum-accuracy = 96
+# can also be set with environment variable TYPISKT_MIN_WPM
+exercise-minimum-wpm = 0
+
+# syntax:ssHash
+EOCONF
+
 }
 
 set -E
@@ -227,15 +332,14 @@ highscore() {
     done
   }
 }
-# ▕   ▎ 
 
 initscreen() {
 
   read -r _height _width < <(stty size)
 
   # max width, set with -w or default to width-2
-  : "${_maxW:=${__o[width]:-$_width}}"
-  _maxW=$(((_width-2)<_maxW?_width-2:_maxW))
+  : "${_maxW:=${__o[width]:-$TYPISKT_WIDTH}}"
+  _maxW=$(( (_width-2)<_maxW?_width-2:_maxW ))
 
   pos[pY]=$(( (_height/2) - 2))
   pos[aY]=$(( pos[pY]+3 ))
@@ -250,6 +354,8 @@ initscreen() {
   f=$(printf "%${_underlinewidth}s" " ")  f=${f// /─}
   _underline="\e[${pos[fY]};${pos[fX]}H$f"
 
+  blank=$(printf "%${_width}s" " ")
+  
   stty -echo
   tput smcup
   tput civis
@@ -265,12 +371,12 @@ listcorpuses() {
 
 makelist() {
 
-  local list exd exf tmpf
+  local list exd exf tmpf exh
   tmpf=$(mktemp)
 
   case "$_mode" in
 
-    words ) list="$_dir/wordlists/${__o[corpus]:-english}" ;;
+    words ) list="$_dir/wordlists/${__o[corpus]:-$TYPISKT_WORDLIST}" ;;
 
     ( book )
       # list="$_dir/text/${__o[book]}"
@@ -292,12 +398,13 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -f ${exd:=${__o[exercise]}} ]] \
-        && exf=$exd && exd=${exf%/*}
-      [[ -d $exd ]] || ERX could not find exercise "$exd"
+      [[ -d ${exd:=${TYPISKT_CONFIG%/*}/exercises/${__o[exercise]}} ]] \
+        || ERX could not find exercise "$exd"
 
+      exd=$(readlink -f "$exd")
+      exh=$(echo -n "$exd" | md5sum | cut -f1 -d' ')
       # file to store index of last exercise
-      _exercisefile=$TYPISKT_CACHE/excersices/$exd
+      _exercisefile=$TYPISKT_CACHE/$exh
 
       # if ARG to --exercise is a directory
       # all files in the dir is added to 'exercises'
@@ -321,6 +428,7 @@ makelist() {
   esac
 
   [[ -f $list ]] || ERX "cannot find $list"
+  _listhash=$(md5sum "$list" | cut -f1 -d' ')
   mapfile -t wordlist < "$list"
   rm "$tmpf"
 }
@@ -340,6 +448,32 @@ nextword() {
   # reset prompt
   op+="\e[${pos[pY]};0H${blank}\e[${pos[pY]};${pos[pX]}H"
 
+}
+
+parseconfig() {
+  
+  local line re sp ns k v
+
+  [[ -f $TYPISKT_CONFIG ]] \
+    || createconf "${TYPISKT_CONFIG%/*}"
+
+  sp='[[:space:]]' ns='[^[:space:]]'
+  re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
+
+  while read -r line ; do [[ $line =~ $re ]] && {
+
+    k=${BASH_REMATCH[1]} v=${BASH_REMATCH[2]}
+
+    case "$k" in
+      default-wordlist          ) TYPISKT_WORDLIST=$v      ;;
+      maxwidth                  ) TYPISKT_WIDTH=$v         ;;
+      cache-dir                 ) TYPISKT_CACHE=${v/'~'/~} ;;
+      highscore-time-format     ) TYPISKT_TIME_FORMAT=$v   ;;
+      exercise-minimum-accuracy ) TYPISKT_MIN_ACC=$v       ;;
+      exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
+    esac
+
+  } ; done < "$TYPISKT_CONFIG"
 }
 
 randomize() {
@@ -377,107 +511,131 @@ results() {
 
   declare -i clicksum bh bw nextex time
 
-  time=$((SECONDS-_start))
+  time=$((_time?_time:SECONDS-_start))
+  clicksum=$((_clicks-_badclicks>1?_clicks-_badclicks:1))
 
-  clicksum=$((_clicks-_badclicks))
+  local key wpm block acc msg=""
 
-  local key block acc msg=""
-
-  tput clear
   tput civis
 
   acc=$(bc -l <<< "scale=3;(100-($_badclicks/$clicksum)*100)")
   wpm=$(bc -l <<< "scale=2;($clicksum/$time)*12")
+  [[ ${acc:0:1} = - ]] && acc=0.0
+  
+  [[ -f $_bookmarkfile ]] && {
+    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+  }
 
   case "$_mode" in
-    exercise ) ;;
-    words    ) ;;
-    source   ) ;;
-    book     ) ;;
-  esac
 
-  [[ -d ${__o[exercise]} ]] && ((${acc%.*} > 96 )) && {
-    nextex=$((_lastexercise+1<${#exercises[@]}
-             ?_lastexercise+1:0))
-    
-    mkdir -p "${_exercisefile%/*}"
-    echo "$nextex" > "$_exercisefile"
-    msg+="\e[${pos[aY]};${pos[aX]}Haccuracy: ${_c[f2]}$acc%${_c[res]}"
-    msg+="\e[$((pos[aY]+1));${pos[aX]}Haverage WPM: $wpm"
-    msg+="\e[$((pos[aY]+2));${pos[aX]}Hpress escape for next exercise"
-  }
-    
-  if [[ -n ${__o[exercise]} ]]; then
-    makelist
-    tput clear
-    ((${acc%.*} > 96 )) || {
-      msg+="\e[${pos[aY]};${pos[aX]}Haccuracy: ${_c[f1]}$acc%${_c[res]}"
-      msg+="\e[$((pos[aY]+1));${pos[aX]}Haverage WPM: $wpm"
-      msg+="\e[$((pos[aY]+2));${pos[aX]}Hpress escape to restart exercise"
-    }
+    ( source )
+      declare filename=${__o[source]##*/}
+      msg+="$filename containing ${_words} words\n"
+      msg+="was typed in $time seconds\n\n"
+      msg+="with an average WPM of ${wpm}\n"
+      msg+="${acc:0:-2}% accurate."
 
-  else
+      msg+="\n\n"
 
+      local lwpm=0.0
+      local flwpm=$TYPISKT_CACHE/$_listhash
 
-    score=$(bc  <<< "(($wpm*$acc)*(1+$_difficulty)/100)")
-    score=${score%.*}
+      [[ -f $flwpm ]] && lwpm=$(< "$TYPISKT_CACHE/$_listhash")
+      if (( ${wpm/./} < ${lwpm/./} )); then
+        msg+="highest WPM on this file: ${lwpm}"
+      else
+        msg+="this is your best result"
+        echo "$wpm" > "$flwpm"
+      fi
 
-    [[ -f $_bookmarkfile ]] && {
-      echo "$((_bookmark+_words))" > "$_bookmarkfile"
-    }
+      tput clear
+      msg=$(centerblock "$msg")
+    ;;
 
-    block=$(
-      printf 'WPM:      %6.2f\n' "$wpm"
-      printf 'accuracy:%6.1f%% ' "$acc"
-      echo -ne "(${_c[f2]}$clicksum${_c[res]}"
-      echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
-    )
+    ( exercise )
 
-    if ((_time >= 60)); then
-      ep=$EPOCHSECONDS
-      hs=$(highscore "$wpm" "$score" "$ep")
-      grep '\*' <<< "$hs" >/dev/null && \
-        msg="A winner is (You)!"$'\n\n'
+      declare -i apass wpass
 
-      poss=$(grep -n "$ep" "$TYPISKT_CACHE/scorefile")
-      msg+="position: ${poss%%:*}"$'\n'
-      msg+="score:    ${score}"
-    else
-      hs=$(highscore)
-      msg=$(printf '%s\n' \
-        "tests under 60 seconds" \
-        "are not added to the"   \
-        "scoreboard"             \
+      apass=$((!TYPISKT_MIN_ACC || ${acc%.*} > TYPISKT_MIN_ACC ))
+      wpass=$((!TYPISKT_MIN_WPM || ${wpm%.*} > TYPISKT_MIN_WPM ))
+      
+      ((apass && wpass)) && {
+        nextex=$((_lastexercise+1<${#exercises[@]}
+                 ?_lastexercise+1:0))
+        
+        echo "$nextex" > "$_exercisefile"
+        echo "$wpm" > "$TYPISKT_CACHE/$_listhash"
+      }
+
+      msg=" accuracy: "
+      ((apass)) && msg+="${_c[f2]}" || msg+="${_c[f1]}"
+      msg+="${acc:0:-2}%${_c[res]}"
+
+      msg+=" | WPM: "
+      ((wpass)) && msg+="${_c[f2]}" || msg+="${_c[f1]}"
+      msg+="$wpm${_c[res]}"
+
+      msg+="\n press escape "
+      ((apass && wpass)) \
+        && msg+="for next exercise"   \
+        || msg+="to restart exercise"
+
+      msg="\e[$((_height-1));0H$msg"
+      
+      makelist
+    ;;
+
+    ( words|book )
+
+      tput clear
+
+      declare -i dif
+      dif=${__o[difficulty]:-0}
+      score=$(bc <<< "scale=2;100*((($wpm*$acc)/100)+1+$dif)")
+      score=${score%.*}
+
+      block=$(
+        printf 'WPM:      %6.2f\n' "$wpm"
+        printf 'accuracy:%6.1f%% ' "$acc"
+        echo -ne "(${_c[f2]}$clicksum${_c[res]}"
+        echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
       )
-    fi
 
-    block+=$'\n\n'"$msg"
+      if ((_time >= 60)); then
+        ep=$EPOCHSECONDS
+        hs=$(highscore "$wpm" "$score" "$ep")
+        grep '\*' <<< "$hs" >/dev/null && \
+          msg="A winner is (You)!"$'\n\n'
 
-    comb=$(paste -d " " <(echo "$hs") - <<< "$block")
-    
-    # wc -L "always" report 24 characters more...
-    declare -i magic=32
+        poss=$(grep -n "$ep" "$TYPISKT_CACHE/scorefile")
+        msg+="position: ${poss%%:*}"$'\n'
+        msg+="score:    ${score}"
+      else
+        hs=$(highscore)
+        msg=$(printf '%s\n' \
+          "tests under 60 seconds" \
+          "are not added to the"   \
+          "scoreboard"             \
+        )
+      fi
 
-    bw=$(wc -L <<< "${comb}")
-    bw=$((bw-magic))
+      block+=$'\n\n'"$msg"
 
-    bx=$(( (_width/2) -  ((bw)/2) ))
-    
-    # don't print highscore in narrow windows
-    (( bw > (_width-2) )) && {
-      bx=1
-      comb="$block"
-    }
+      comb=$(paste -d " " <(echo "$hs") - <<< "$block")
+      
+      # wc -L "always" report 24 characters more...
+      declare -i magic=32
 
-    bi=$(printf "%${bx}s" " ")
-    comb="$bi${comb//$'\n'/$'\n'${bi}}"
-    comb="$comb"
+      bw=$(wc -L <<< "${comb}")
+      bw=$((bw-magic))
 
-    bh=$(wc -l <<< "$comb")
-    by=$(( (_height/2) - (bh/2) ))
+      # don't print highscore in narrow windows
+      (( bw > (_width-2) )) && comb="$block"
 
-    msg="\e[${by};0H${comb}"
-  fi
+      msg=$(centerblock "$comb")
+    ;;
+
+  esac
 
   echo -en "$msg"
 
@@ -513,7 +671,7 @@ setline() {
   _nextpos=0
   makeline
 
-  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\n${blank}\e[${pos[aY]};0H"
   op+="$indent${activeline[*]}\n"
   op+="$indent${nextline[*]}"
 
@@ -587,7 +745,7 @@ setstatus() {
 
 starttest() {
 
-  local key c1 c2
+  local key c1 c2 exd
   declare -i lasttime=-1 status sl cl
 
   _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
@@ -595,8 +753,25 @@ starttest() {
 
   op=$_underline
 
-  [[ -n ${__o[exercise]} ]] && ((pos[pY]>1)) \
-    && op+="\e[1;1Hexercise ${_exercisefile##*/} ($((_lastexercise+1))/${#exercises[@]})"
+  [[ -n ${exd:=${__o[exercise]}} ]] && ((pos[pY]>1)) && {
+
+    op+="\e[1;1Hexercise ${exd##*/} "
+    op+="($((_lastexercise+1))/${#exercises[@]}) "
+
+    local lwpm # last wpm on current exercise
+    [[ -f ${lwpm:=$TYPISKT_CACHE/$_listhash} ]] && {
+      lwpm=$( < "$lwpm" )
+      lwpm=${lwpm:0:-1}
+      op+="best WPM: $lwpm"
+      :
+    } || op+="               "
+
+    op+="    "
+  }
+  
+  # when linebreaks are used, a new list have to be
+  # generated each game
+  ((_prop & m[linebreak])) && makelist
 
   randomize
   makeline
@@ -622,7 +797,7 @@ starttest() {
       _string+=$key
 
       # start the timer
-      ((_start)) || { _start=$SECONDS ; _t=$((_time+SECONDS)) ;}
+      ((_start)) || { _start=$SECONDS ; _t=$((_time+_start)) ;}
 
       nextchar=${_activeword:$((${#_string}-1)):1}
       [[ $key = "$nextchar" ]] && status=$_oldstatus \
@@ -650,7 +825,7 @@ starttest() {
     # https://askubuntu.com/a/299469
     # backspace key
     elif [[ $key = $'\177' ]]; then
-      ((${#_string}<1 && _badclicks++)) && continue
+      ((${#_string}<1 && ++_badclicks)) && continue
       key=$'\b \b'
       _string=${_string:0:-1}
 
@@ -659,6 +834,8 @@ starttest() {
 
       # penalty for erasing good char
       ((_oldstatus == 1 || _badclicks++)) 
+
+    # escape sequence
     elif [[ $key = $'\u1b' ]]; then
       # catch arrowkeys etc
       read -rsn2 -t 0.001 key && {
@@ -670,8 +847,16 @@ starttest() {
                      ?${#exercises[@]}-1:_lastexercise-1))
           ;;
           '[B'|'[C' )  # down/right
-            nextex=$((_lastexercise+1<${#exercises[@]}
-                     ?_lastexercise+1:0))
+            cheating="${_exercisefile%/*}/$_listhash"
+            if [[ -f $cheating ]]; then
+              nextex=$((_lastexercise+1<${#exercises[@]}
+                       ?_lastexercise+1:0))
+            else
+              echo -en "${_c[civis]}${_c[sc]}\e[$_height;0H${_c[f1]}NO CHEATING${_c[res]}"
+              read -rsn 1
+              echo -en "\e[$_height;0H$blank${_c[rc]}${_c[norm]}"
+              continue
+            fi
           ;;
           * ) continue ;;
         esac
@@ -681,7 +866,7 @@ starttest() {
         return
       }
 
-      # pressing escape will restart the game
+      # pressing escape alone will restart the game
       return  
     else
       continue

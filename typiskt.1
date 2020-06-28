@@ -1,5 +1,5 @@
 .nh
-.TH TYPISKT 1 2020\-06\-25 Linux "User Manuals"
+.TH TYPISKT 1 2020\-06\-28 Linux "User Manuals"
 .SH NAME
 .PP
 \fB\fCtypiskt\fR \- touchtype training for dirt\-hackers
@@ -12,7 +12,7 @@
 typiskt [\-\-corpus|\-c WORDLIST] [\-\-difficulty|\-d INT] [\-\-time|\-t SECONDS] [\-\-width|\-w WIDTH] [\-\-seed|\-s INT]
 typiskt \-\-book|\-b TEXTFILE [\-\-difficulty|\-d INT] [\-\-time|\-t SECONDS] [\-\-width|\-w WIDTH]
 typiskt \-\-source|\-u SOURCECODE [\-\-width|\-w WIDTH]
-typiskt \-\-exercise|\-e DIR|FILE [\-\-width|\-w WIDTH]
+typiskt \-\-exercise|\-e DIR [\-\-width|\-w WIDTH]
 typiskt \-\-list|\-l
 typiskt \-\-help|\-h
 typiskt \-\-version|\-v
@@ -22,7 +22,17 @@ typiskt \-\-version|\-v
 
 .SH DESCRIPTION
 .PP
-https://github.com/rr\-/10ff
+| mode     |Random|Difficulty|Timed|Bookmark|Line\-break|Loop|Series|Highscore|  |:\-\-\-\-\-\-\-\-\-|:\-\-\-\-:|:\-\-\-\-\-\-\-\-:|:\-\-\-:|:\-\-\-\-\-\-:|:\-\-\-\-\-\-\-\-:|:\-\-:|:\-\-\-\-:|:\-\-\-\-\-\-\-:|
+.br
+| words    |x     |x         |x    |        |          |    |      |x        |
+.br
+| book     |      |x         |x    |x       |          |x   |      |x        |
+.br
+| source   |      |          |     |        |x         |    |      |         |
+.br
+| exercise |      |          |     |        |          |    |x     |         |
+
+.PP
 https://github.com/kevinboone/epub2txt2 length
 
 .SH OPTIONS
@@ -48,7 +58,7 @@ https://github.com/kevinboone/epub2txt2 length
 \fB\fC\-\-source\fR|\fB\fC\-u\fR SOURCECODE
 
 .PP
-\fB\fC\-\-exercise\fR|\fB\fC\-e\fR FILE
+\fB\fC\-\-exercise\fR|\fB\fC\-e\fR DIR
 
 .PP
 \fB\fC\-\-list\fR|\fB\fC\-l\fR
@@ -71,6 +81,12 @@ Show version and exit.
 defaults to: $HOME/.config
 
 .PP
+\fB\fCTYPISKT\_CONFIG\fR
+
+.PP
+defaults to: $XDG\_CONFIG\_HOME/typiskt/config
+
+.PP
 \fB\fCTYPISKT\_CACHE\fR
 
 .PP
@@ -81,6 +97,30 @@ defaults to: $HOME/.cache/typiskt
 
 .PP
 defaults to: "%y/%m/%d"
+
+.PP
+\fB\fCTYPISKT\_WIDTH\fR
+
+.PP
+defaults to: 50
+
+.PP
+\fB\fCTYPISKT\_WORDLIST\fR
+
+.PP
+defaults to: english
+
+.PP
+\fB\fCTYPISKT\_MIN\_ACC\fR
+
+.PP
+defaults to: 96
+
+.PP
+\fB\fCTYPISKT\_MIN\_WPM\fR
+
+.PP
+defaults to: 0
 
 .SH DEPENDENCIES
 .PP
