@@ -11,8 +11,8 @@
 .nf
 typiskt [\-\-corpus|\-c WORDLIST] [\-\-difficulty|\-d INT] [\-\-time|\-t SECONDS] [\-\-width|\-w WIDTH] [\-\-seed|\-s INT]
 typiskt \-\-book|\-b TEXTFILE [\-\-difficulty|\-d INT] [\-\-time|\-t SECONDS] [\-\-width|\-w WIDTH]
-typiskt \-\-source|\-u SOURCECODE [\-\-width|\-w WIDTH]
-typiskt \-\-exercise|\-e DIR [\-\-width|\-w WIDTH]
+typiskt \-\-source|\-u TEXTFILE [\-\-width|\-w WIDTH]
+typiskt \-\-exercise|\-e EXERCISE [\-\-width|\-w WIDTH]
 typiskt \-\-list|\-l
 typiskt \-\-help|\-h
 typiskt \-\-version|\-v
@@ -21,17 +21,21 @@ typiskt \-\-version|\-v
 .RE
 
 .SH DESCRIPTION
+.PP
+You will get a different type of test depending
+on which mode you start \fBtypiskt\fP in. No matter
+which mode you can press Escape to
+restart the test, and Ctrl+c
+to quit.
+
 .TS
 allbox;
-l l l l l l l l l 
-l l l l l l l l l .
-\fB\fCmode\fR	\fB\fCRandom\fR	\fB\fCDifficulty\fR	\fB\fCTimed\fR	\fB\fCBookmark\fR	\fB\fCLine\-break\fR	\fB\fCLoop\fR	\fB\fCSeries\fR	\fB\fCHighscore\fR
-words	x	x	x					x
-book		x	x	x		x		x
-source					x			exercise							x	.TE
-
-.PP
-https://github.com/kevinboone/epub2txt2 length
+l l l l l l l l 
+l l l l l l l l .
+\fB\fCmode\fR	\fB\fCRandom\fR	\fB\fCDifficulty\fR	\fB\fCTimed\fR	\fB\fCBookmark\fR	\fB\fCLine\-break\fR	\fB\fCSeries\fR	\fB\fCHighscore\fR
+words	x	x	x				x
+book		x	x	x			x
+source					x		exercise						x	.TE
 
 .SH OPTIONS
 .PP
@@ -53,10 +57,10 @@ https://github.com/kevinboone/epub2txt2 length
 \fB\fC\-\-book\fR|\fB\fC\-b\fR TEXTFILE
 
 .PP
-\fB\fC\-\-source\fR|\fB\fC\-u\fR SOURCECODE
+\fB\fC\-\-source\fR|\fB\fC\-u\fR TEXTFILE
 
 .PP
-\fB\fC\-\-exercise\fR|\fB\fC\-e\fR DIR
+\fB\fC\-\-exercise\fR|\fB\fC\-e\fR EXERCISE
 
 .PP
 \fB\fC\-\-list\fR|\fB\fC\-l\fR
@@ -79,10 +83,10 @@ Show version and exit.
 defaults to: $HOME/.config
 
 .PP
-\fB\fCTYPISKT\_CONFIG\fR
+\fB\fCTYPISKT\_CONFIG\_DIR\fR
 
 .PP
-defaults to: $XDG\_CONFIG\_HOME/typiskt/config
+defaults to: $XDG\_CONFIG\_HOME/typiskt
 
 .PP
 \fB\fCTYPISKT\_CACHE\fR

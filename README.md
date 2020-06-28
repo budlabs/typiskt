@@ -32,17 +32,24 @@ typiskt - version: 2020.06.22.1
 updated: 2020-06-22 by budRich
 ```
 
+
+when **typiskt** is executed and **TYPISKT_CONFIG_DIR** (defaults to `~/.config/typiskt`) or **TYPISKT_CACHE** (defaults to `~/.cache/typiskt`) doesn't exist, they will get created.
+
 usage
 -----
 
-| mode     |Random|Difficulty|Timed|Bookmark|Line-break|Loop|Series|Highscore|
-|:---------|:----:|:--------:|:---:|:------:|:--------:|:--:|:----:|:-------:| 
-| words    |x     |x         |x    |        |          |    |      |x        | 
-| book     |      |x         |x    |x       |          |x   |      |x        | 
-| source   |      |          |     |        |x         |    |      |         | 
-| exercise |      |          |     |        |          |    |x     |         | 
+You will get a different type of test depending on which
+mode you start **typiskt** in. No matter which mode you can
+press <kbd>Escape</kbd> to restart the test, and
+<kbd>Ctrl</kbd>+<kbd>c</kbd> to quit.
 
-https://github.com/kevinboone/epub2txt2 length
+
+| mode     |Random|Difficulty|Timed|Bookmark|Line-break|Series|Highscore|
+|:---------|:----:|:--------:|:---:|:------:|:--------:|:----:|:-------:| 
+| words    |x     |x         |x    |        |          |      |x        | 
+| book     |      |x         |x    |x       |          |      |x        | 
+| source   |      |          |     |        |x         |      |         | 
+| exercise |      |          |     |        |          |x     |         |
 
 
 options
@@ -51,8 +58,8 @@ options
 ```text
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR [--width|-w WIDTH]
+typiskt --source|-u TEXTFILE [--width|-w WIDTH]
+typiskt --exercise|-e EXERCISE [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -71,9 +78,9 @@ typiskt --version|-v
 
 `--book`|`-b` TEXTFILE  
 
-`--source`|`-u` SOURCECODE  
+`--source`|`-u` TEXTFILE  
 
-`--exercise`|`-e` DIR  
+`--exercise`|`-e` EXERCISE  
 
 `--list`|`-l`  
 

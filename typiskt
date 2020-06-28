@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.28.10
+typiskt - version: 2020.06.28.14
 updated: 2020-06-28 by budRich
 EOB
 }
@@ -11,7 +11,7 @@ EOB
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
-: "${TYPISKT_CONFIG:=$XDG_CONFIG_HOME/typiskt/config}"
+: "${TYPISKT_CONFIG_DIR:=$XDG_CONFIG_HOME/typiskt}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 : "${TYPISKT_WIDTH:=50}"
@@ -128,8 +128,8 @@ SYNOPSIS
 --------
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR [--width|-w WIDTH]
+typiskt --source|-u TEXTFILE [--width|-w WIDTH]
+typiskt --exercise|-e EXERCISE [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -149,9 +149,9 @@ OPTIONS
 
 --book|-b TEXTFILE  
 
---source|-u SOURCECODE  
+--source|-u TEXTFILE  
 
---exercise|-e DIR  
+--exercise|-e EXERCISE  
 
 --list|-l  
 
@@ -398,7 +398,7 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -d ${exd:=${TYPISKT_CONFIG%/*}/exercises/${__o[exercise]}} ]] \
+      [[ -d ${exd:=${TYPISKT_CONFIG_DIR}/exercises/${__o[exercise]}} ]] \
         || ERX could not find exercise "$exd"
 
       exd=$(readlink -f "$exd")
@@ -454,8 +454,8 @@ parseconfig() {
   
   local line re sp ns k v
 
-  [[ -f $TYPISKT_CONFIG ]] \
-    || createconf "${TYPISKT_CONFIG%/*}"
+  [[ -f $TYPISKT_CONFIG_DIR/config ]] \
+    || createconf "$TYPISKT_CONFIG_DIR"
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
@@ -473,7 +473,7 @@ parseconfig() {
       exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
     esac
 
-  } ; done < "$TYPISKT_CONFIG"
+  } ; done < "$TYPISKT_CONFIG/config"
 }
 
 randomize() {
