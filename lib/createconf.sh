@@ -56,6 +56,10 @@ done
 EOCONF
 
 chmod +x "$trgdir/exercises/add-gtypist-exercises.sh"
+cat << 'EOCONF' > "$trgdir/exercises/README.md"
+when **typiskt** is executed with the `--exercise ARG` option, it will look in this directory for a sub directory with the same name as ARG. **typiskt** doesn't come with any exercises, but executing the script: `add-gtypist-exercises.sh` will download and convert the default English exercises from <https://github.com/inaimathi/gtypist-single-space>, and add them to this directory.
+EOCONF
+
 cat << 'EOCONF' > "$trgdir/config"
 # can also be set with --corpus commandlineoption
 # or environment variable TYPISKT_WORDLIST

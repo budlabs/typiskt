@@ -2,15 +2,22 @@
 
 makelist() {
 
-  local list exd exf tmpf exh
+  local list exd exf tmpf exh corpus
   tmpf=$(mktemp)
 
   case "$_mode" in
 
-    words ) list="$_dir/wordlists/${__o[corpus]:-$TYPISKT_WORDLIST}" ;;
+   ( words )
+     corpus=${__o[corpus]:-$TYPISKT_WORDLIST}
+
+     [[ -f "${list:=$_dir/wordlists/$corpus}"  ]] || unset list
+     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] || unset list
+     : "${list:=$corpus}"
+
+    ;;
 
     ( book )
-      # list="$_dir/text/${__o[book]}"
+
       list=${__o[book]}
       [[ -f $list ]] || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
@@ -29,7 +36,7 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -d ${exd:=${TYPISKT_CONFIG%/*}/exercises/${__o[exercise]}} ]] \
+      [[ -d ${exd:=${TYPISKT_CONFIG_DIR}/exercises/${__o[exercise]}} ]] \
         || ERX could not find exercise "$exd"
 
       exd=$(readlink -f "$exd")

@@ -42,12 +42,15 @@ OPTIONS
 %%fi%%
 %%done%%
 %%fi%%
+%%if readme_usage%%
 
+%%readme_usage%%
+
+%%fi%%
 %%if -d doc%%
 %%cat doc/*%%
 %%else%%
 %%if -d wiki/doc%%
-arbe
 %%cat wiki/doc/*%%
 %%fi%%
 %%fi%%

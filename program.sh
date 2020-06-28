@@ -3,15 +3,15 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.27.3
-updated: 2020-06-27 by budRich
+typiskt - version: 2020.06.28.53
+updated: 2020-06-28 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
-: "${TYPISKT_CONFIG:=$XDG_CONFIG_HOME/typiskt/config}"
+: "${TYPISKT_CONFIG_DIR:=$XDG_CONFIG_HOME/typiskt}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 : "${TYPISKT_WIDTH:=50}"
@@ -20,22 +20,11 @@ EOB
 : "${TYPISKT_MIN_WPM:=0}"
 
 
-#
-# 2020 June 14
-#
-# The author disclaims copyright to this source code.
-# In place of a legal notice, here is a blessing:
-#
-#    May you do good and not evil.
-#    May you find forgiveness for yourself and forgive others.
-#    May you share freely, never taking more than you give.
-#
-###############################################################
-
 main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
+  _sdir=/usr/share/typiskt
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
@@ -102,8 +91,13 @@ main() {
                     __o[difficulty] < 11 ? __o[difficulty] :
                     __o[difficulty] > 10 ? 10 : 0 ))
 
+    local maskfile
+    
+    [[ -f "${maskfile:=$_dir/wordmasks}"  ]] || unset maskfile
+    [[ -f "${maskfile:=$_sdir/wordmasks}" ]] || _difficulty=0
+    
     ((_difficulty)) && {
-      mapfile -t wordmasks < "$_dir/wordmasks"
+      mapfile -t wordmasks < "$maskfile"
       _difficulty=$(( ${#wordmasks[@]} * ((11-_difficulty) +4) ))
     }
 
@@ -140,8 +134,8 @@ SYNOPSIS
 --------
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR [--width|-w WIDTH]
+typiskt --source|-u TEXTFILE [--width|-w WIDTH]
+typiskt --exercise|-e EXERCISE [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -150,22 +144,55 @@ OPTIONS
 -------
 
 --corpus|-c WORDLIST  
+changes WORDLIST to use in the default (words)
+mode. Defaults to english. This value can also be
+set in TYPISKT_CONFIG_DIR/config or with the
+environment variable TYPISKT_WORDLIST.
+
 
 --difficulty|-d INT  
+INT must be a number 0-10, the higher the
+difficulty the more often a wordmask will be
+applied to words in modes that supports
+--difficulty (words|book).
+
 
 --time|-t SECONDS  
+Number of seconds a test will last in modes that
+supports --time (words|book). Defaults to 60.
+
 
 --width|-w WIDTH  
+Maximum width in columns for lines. Defaults to:
+min(50,COLUMNS-2)
+
 
 --seed|-s INT  
+Seed to be used for RANDOM. Defaults to $(od -An
+-N3 -i /dev/random)
+
 
 --book|-b TEXTFILE  
+Sets mode to book and uses TEXTFILE as a
+wordlist.
 
---source|-u SOURCECODE  
 
---exercise|-e DIR  
+--source|-u TEXTFILE  
+Sets mode to source and uses TEXTFILE as a
+wordlist.
+
+
+--exercise|-e EXERCISE  
+Sets mode to exercise and looks in
+TYPISKT_CONFIG_DIR/exercises/EXERCISE for files to
+generate wordlists.
+
 
 --list|-l  
+List available wordlists in WORDLIST_DIR
+(defaults to /usr/share/typiskt/wordlist or
+SCRIPTDIR/wordlists).
+
 
 --help|-h  
 Show help and exit.
@@ -173,6 +200,7 @@ Show help and exit.
 
 --version|-v  
 Show version and exit.
+
 EOB
 }
 
@@ -262,6 +290,10 @@ done
 EOCONF
 
 chmod +x "$trgdir/exercises/add-gtypist-exercises.sh"
+cat << 'EOCONF' > "$trgdir/exercises/README.md"
+when **typiskt** is executed with the `--exercise ARG` option, it will look in this directory for a sub directory with the same name as ARG. **typiskt** doesn't come with any exercises, but executing the script: `add-gtypist-exercises.sh` will download and convert the default English exercises from <https://github.com/inaimathi/gtypist-single-space>, and add them to this directory.
+EOCONF
+
 cat << 'EOCONF' > "$trgdir/config"
 # can also be set with --corpus commandlineoption
 # or environment variable TYPISKT_WORDLIST
@@ -373,21 +405,32 @@ initscreen() {
 }
 
 listcorpuses() {
-  ls "$_dir/wordlists" >&2
+
+  {
+    [[ -d "$_dir/wordlists"  ]] && ls "$_dir/wordlists"
+    [[ -d "$_sdir/wordlists" ]] && ls "$_sdir/wordlists"
+  } | sort -u
   exit
 }
 
 makelist() {
 
-  local list exd exf tmpf exh
+  local list exd exf tmpf exh corpus
   tmpf=$(mktemp)
 
   case "$_mode" in
 
-    words ) list="$_dir/wordlists/${__o[corpus]:-$TYPISKT_WORDLIST}" ;;
+   ( words )
+     corpus=${__o[corpus]:-$TYPISKT_WORDLIST}
+
+     [[ -f "${list:=$_dir/wordlists/$corpus}"  ]] || unset list
+     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] || unset list
+     : "${list:=$corpus}"
+
+    ;;
 
     ( book )
-      # list="$_dir/text/${__o[book]}"
+
       list=${__o[book]}
       [[ -f $list ]] || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
@@ -406,7 +449,7 @@ makelist() {
       # exd - shorthand for exercise directory/name 
       # exf - shorthand for exercise file/number
 
-      [[ -d ${exd:=${TYPISKT_CONFIG%/*}/exercises/${__o[exercise]}} ]] \
+      [[ -d ${exd:=${TYPISKT_CONFIG_DIR}/exercises/${__o[exercise]}} ]] \
         || ERX could not find exercise "$exd"
 
       exd=$(readlink -f "$exd")
@@ -462,8 +505,8 @@ parseconfig() {
   
   local line re sp ns k v
 
-  [[ -f $TYPISKT_CONFIG ]] \
-    || createconf "${TYPISKT_CONFIG%/*}"
+  [[ -f $TYPISKT_CONFIG_DIR/config ]] \
+    || createconf "$TYPISKT_CONFIG_DIR"
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
@@ -481,7 +524,7 @@ parseconfig() {
       exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
     esac
 
-  } ; done < "$TYPISKT_CONFIG"
+  } ; done < "$TYPISKT_CONFIG_DIR/config"
 }
 
 randomize() {

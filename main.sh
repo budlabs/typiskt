@@ -1,20 +1,10 @@
 #!/usr/bin/env bash
-#
-# 2020 June 14
-#
-# The author disclaims copyright to this source code.
-# In place of a legal notice, here is a blessing:
-#
-#    May you do good and not evil.
-#    May you find forgiveness for yourself and forgive others.
-#    May you share freely, never taking more than you give.
-#
-###############################################################
 
 main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
+  _sdir=/usr/share/typiskt
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
@@ -81,8 +71,13 @@ main() {
                     __o[difficulty] < 11 ? __o[difficulty] :
                     __o[difficulty] > 10 ? 10 : 0 ))
 
+    local maskfile
+    
+    [[ -f "${maskfile:=$_dir/wordmasks}"  ]] || unset maskfile
+    [[ -f "${maskfile:=$_sdir/wordmasks}" ]] || _difficulty=0
+    
     ((_difficulty)) && {
-      mapfile -t wordmasks < "$_dir/wordmasks"
+      mapfile -t wordmasks < "$maskfile"
       _difficulty=$(( ${#wordmasks[@]} * ((11-_difficulty) +4) ))
     }
 

@@ -1,6 +1,10 @@
 #!/bin/bash
 
 listcorpuses() {
-  ls "$_dir/wordlists" >&2
+
+  {
+    [[ -d "$_dir/wordlists"  ]] && ls "$_dir/wordlists"
+    [[ -d "$_sdir/wordlists" ]] && ls "$_sdir/wordlists"
+  } | sort -u
   exit
 }

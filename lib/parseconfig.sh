@@ -4,8 +4,8 @@ parseconfig() {
   
   local line re sp ns k v
 
-  [[ -f $TYPISKT_CONFIG ]] \
-    || createconf "${TYPISKT_CONFIG%/*}"
+  [[ -f $TYPISKT_CONFIG_DIR/config ]] \
+    || createconf "$TYPISKT_CONFIG_DIR"
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
@@ -23,5 +23,5 @@ parseconfig() {
       exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
     esac
 
-  } ; done < "$TYPISKT_CONFIG"
+  } ; done < "$TYPISKT_CONFIG_DIR/config"
 }

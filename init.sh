@@ -3,15 +3,15 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.27.3
-updated: 2020-06-27 by budRich
+typiskt - version: 2020.06.28.53
+updated: 2020-06-28 by budRich
 EOB
 }
 
 
 # environment variables
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
-: "${TYPISKT_CONFIG:=$XDG_CONFIG_HOME/typiskt/config}"
+: "${TYPISKT_CONFIG_DIR:=$XDG_CONFIG_HOME/typiskt}"
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 : "${TYPISKT_WIDTH:=50}"
@@ -30,8 +30,8 @@ SYNOPSIS
 --------
 typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
 typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt --source|-u SOURCECODE [--width|-w WIDTH]
-typiskt --exercise|-e DIR [--width|-w WIDTH]
+typiskt --source|-u TEXTFILE [--width|-w WIDTH]
+typiskt --exercise|-e EXERCISE [--width|-w WIDTH]
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -40,22 +40,55 @@ OPTIONS
 -------
 
 --corpus|-c WORDLIST  
+changes WORDLIST to use in the default (words)
+mode. Defaults to english. This value can also be
+set in TYPISKT_CONFIG_DIR/config or with the
+environment variable TYPISKT_WORDLIST.
+
 
 --difficulty|-d INT  
+INT must be a number 0-10, the higher the
+difficulty the more often a wordmask will be
+applied to words in modes that supports
+--difficulty (words|book).
+
 
 --time|-t SECONDS  
+Number of seconds a test will last in modes that
+supports --time (words|book). Defaults to 60.
+
 
 --width|-w WIDTH  
+Maximum width in columns for lines. Defaults to:
+min(50,COLUMNS-2)
+
 
 --seed|-s INT  
+Seed to be used for RANDOM. Defaults to $(od -An
+-N3 -i /dev/random)
+
 
 --book|-b TEXTFILE  
+Sets mode to book and uses TEXTFILE as a
+wordlist.
 
---source|-u SOURCECODE  
 
---exercise|-e DIR  
+--source|-u TEXTFILE  
+Sets mode to source and uses TEXTFILE as a
+wordlist.
+
+
+--exercise|-e EXERCISE  
+Sets mode to exercise and looks in
+TYPISKT_CONFIG_DIR/exercises/EXERCISE for files to
+generate wordlists.
+
 
 --list|-l  
+List available wordlists in WORDLIST_DIR
+(defaults to /usr/share/typiskt/wordlist or
+SCRIPTDIR/wordlists).
+
 
 --help|-h  
 Show help and exit.
@@ -63,6 +96,7 @@ Show help and exit.
 
 --version|-v  
 Show version and exit.
+
 EOB
 }
 
