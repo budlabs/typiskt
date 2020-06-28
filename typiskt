@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.28.14
+typiskt - version: 2020.06.28.25
 updated: 2020-06-28 by budRich
 EOB
 }
@@ -138,22 +138,51 @@ OPTIONS
 -------
 
 --corpus|-c WORDLIST  
+changes WORDLIST to use in the default (words)
+mode. Defaults to english. This value can also be
+set in TYPISKT_CONFIG_DIR/config or with the
+environment variable TYPISKT_WORDLIST.
+
 
 --difficulty|-d INT  
+INT must be a number 0-10, the higher the
+difficulty the more often a wordmask will be
+applied to words in modes that supports
+--difficulty (words|book).
+
 
 --time|-t SECONDS  
+Number of seconds a test will last in modes that
+supports --time (words|book). Defaults to 60.
+
 
 --width|-w WIDTH  
+Maximum width in columns for lines. Defaults to:
+min(50,COLUMNS-2)
+
 
 --seed|-s INT  
+Seed to be used for RANDOM. Defaults to $(od -An
+-N3 -i /dev/random)
+
 
 --book|-b TEXTFILE  
+Sets mode to book and uses TEXTFILE as a
+wordlist.
+
 
 --source|-u TEXTFILE  
+Sets mode to source and uses TEXTFILE as a
+wordlist.
+
 
 --exercise|-e EXERCISE  
 
 --list|-l  
+List available wordlists in WORDLIST_DIR
+(defaults to /usr/share/typiskt/wordlist or
+SCRIPTDIR/wordlists).
+
 
 --help|-h  
 Show help and exit.
@@ -161,6 +190,7 @@ Show help and exit.
 
 --version|-v  
 Show version and exit.
+
 EOB
 }
 

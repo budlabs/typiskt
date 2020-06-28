@@ -37,33 +37,118 @@ words	x	x	x				x
 book		x	x	x			x
 source					x		exercise						x	.TE
 
+.SS words
+.PP
+This is the default mode and it will use words
+taken from a corpus and show them in a random
+order, the test will stop when the time is up. If
+time was more then 60 seconds, the "score" will
+get recorded. The default corpus is \fIenglish\fP, but
+it can be changed to any corpus listed with
+\fB\fC\-\-list\fR, using the \fB\fC\-\-corpus\fR options. If
+\fB\fC\-\-difficulty\fR is set, some words will have a
+random \fIwordmask\fP applied to them making the test
+more difficult, difficulty will also add some
+bonus point to the high score.
+
+.SS book
+.PP
+This is very similar to the words mode, except
+the words are taken from a specific textfile (the
+argument to \fB\fC\-\-book\fR) and will be displayed in
+chronological order. It will also record the word
+the test ended on, so if a new test is started
+with the same text, it will resume on that word
+(\fBbookmark\fP).
+
+.SS source
+.PP
+Will also print words in chronological order from
+a specific file (the argument to \fB\fC\-\-source\fR)  but
+unlike \fBbook mode\fP it will respect Line\-breaks.
+time limit, bookmark and difficulty is disabled
+for this mode. It is intended for (short) snippets
+of source code. The highest WPM for the file will
+be stored and displayed when the test is
+completed.
+
+.SS exercise
+.PP
+The argument to \fB\fC\-\-exercise\fR must be the name of
+a subdirectory in
+\fBTYPISKT\_CONFIG\_DIR/exercises\fP\&. That
+subdirectory in turn is expected to contain one or
+more wordlists (files with one word/line). The
+content of these wordlists will be displayed in
+chronological order. And to proceed to the next
+exercise/wordlist (sorted in numerical order with
+\fB\fCsort \-n\fR) a certain WPM and accuracy must be
+reached (the values can be changed in
+\fBTYPISKT\_CONFIG\_DIR/config\fP). You can navigate
+between \fBcompleted\fP exercises with the
+Arrow keys in this mode. No exercises
+is included with the installation, but the script:
+\fB\fCTYPISKT\_CONFIG\_DIR/exercises/add\-gtypist\-exercises.sh\fR
+will download, convert and install the default
+English exercises from [gtypist].
+
 .SH OPTIONS
 .PP
 \fB\fC\-\-corpus\fR|\fB\fC\-c\fR WORDLIST
+.br
+changes WORDLIST to use in the default
+(\fBwords\fP) mode. Defaults to \fIenglish\fP\&. This
+value can also be set in
+\fB\fCTYPISKT\_CONFIG\_DIR/config\fR or with the
+environment variable \fBTYPISKT\_WORDLIST\fP\&.
 
 .PP
 \fB\fC\-\-difficulty\fR|\fB\fC\-d\fR INT
+.br
+INT must be a number 0\-10, the higher the
+difficulty the more often a wordmask will be
+applied to words in modes that supports
+\fB\fC\-\-difficulty\fR (words|book).
 
 .PP
 \fB\fC\-\-time\fR|\fB\fC\-t\fR SECONDS
+.br
+Number of seconds a test will last in modes that
+supports \fB\fC\-\-time\fR (words|book). Defaults to 60.
 
 .PP
 \fB\fC\-\-width\fR|\fB\fC\-w\fR WIDTH
+.br
+Maximum width in columns for lines. Defaults to:
+\fB\fCmin(50,COLUMNS\-2)\fR
 
 .PP
 \fB\fC\-\-seed\fR|\fB\fC\-s\fR INT
+.br
+Seed to be used for RANDOM. Defaults to \fB\fC$(od \-An
+\-N3 \-i /dev/random)\fR
 
 .PP
 \fB\fC\-\-book\fR|\fB\fC\-b\fR TEXTFILE
+.br
+Sets mode to \fBbook\fP and uses TEXTFILE as a
+wordlist.
 
 .PP
 \fB\fC\-\-source\fR|\fB\fC\-u\fR TEXTFILE
+.br
+Sets mode to \fBsource\fP and uses TEXTFILE as a
+wordlist.
 
 .PP
 \fB\fC\-\-exercise\fR|\fB\fC\-e\fR EXERCISE
 
 .PP
 \fB\fC\-\-list\fR|\fB\fC\-l\fR
+.br
+List available wordlists in \fBWORDLIST\_DIR\fP
+(defaults to \fB\fC/usr/share/typiskt/wordlist\fR or
+\fB\fCSCRIPTDIR/wordlists\fR).
 
 .PP
 \fB\fC\-\-help\fR|\fB\fC\-h\fR
