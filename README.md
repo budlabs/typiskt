@@ -35,12 +35,12 @@ updated: 2020-06-22 by budRich
 usage
 -----
 
-| mode     |Random|Difficulty|Timed|Bookmark|Line-break|Loop|Series|Highscore|  |:---------|:----:|:--------:|:---:|:------:|:--------:|:--:|:----:|:-------:|  
-| words    |x     |x         |x    |        |          |    |      |x        |  
-| book     |      |x         |x    |x       |          |x   |      |x        |  
-| source   |      |          |     |        |x         |    |      |         |  
-| exercise |      |          |     |        |          |    |x     |         |  
-
+| mode     |Random|Difficulty|Timed|Bookmark|Line-break|Loop|Series|Highscore|
+|:---------|:----:|:--------:|:---:|:------:|:--------:|:--:|:----:|:-------:| 
+| words    |x     |x         |x    |        |          |    |      |x        | 
+| book     |      |x         |x    |x       |          |x   |      |x        | 
+| source   |      |          |     |        |x         |    |      |         | 
+| exercise |      |          |     |        |          |    |x     |         | 
 
 https://github.com/kevinboone/epub2txt2 length
 
