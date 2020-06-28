@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.28.25
+typiskt - version: 2020.06.28.26
 updated: 2020-06-28 by budRich
 EOB
 }
@@ -177,6 +177,10 @@ wordlist.
 
 
 --exercise|-e EXERCISE  
+Sets mode to exercise and looks in
+TYPISKT_CONFIG_DIR/exercises/EXERCISE for files to
+generate wordlists.
+
 
 --list|-l  
 List available wordlists in WORDLIST_DIR

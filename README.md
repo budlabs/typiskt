@@ -135,6 +135,9 @@ Sets mode to **book** and uses TEXTFILE as a wordlist.
 Sets mode to **source** and uses TEXTFILE as a wordlist.
 
 `--exercise`|`-e` EXERCISE  
+Sets mode to **exercise** and looks in
+**TYPISKT_CONFIG_DIR/exercises/EXERCISE** for files to
+generate wordlists.
 
 `--list`|`-l`  
 List available wordlists in **WORDLIST_DIR** (defaults to
