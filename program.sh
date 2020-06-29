@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.28.53
-updated: 2020-06-28 by budRich
+typiskt - version: 2020.06.29.20
+updated: 2020-06-29 by budRich
 EOB
 }
 
@@ -36,8 +36,8 @@ main() {
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
-  declare -i _seed _lastexercise _start
-  declare -i _underlinewidth=14
+  declare -i _seed _lastexercise _start _gotscreen=0
+  declare -i _underlinewidth=14 _resize=0 
 
   declare -a exercises
   declare -a wordlist   # wordlist as array
@@ -46,6 +46,17 @@ main() {
   declare -a nextline activeline
 
   declare -A pos
+  declare -A _c
+
+  for k in {0..7}; do 
+    _c[f$k]=$(tput setaf "$k")
+    _c[b$k]=$(tput setab "$k")
+  done
+  _c[res]=$(tput sgr0)
+  _c[sc]=$(tput sc)
+  _c[rc]=$(tput rc)
+  _c[civis]=$(tput civis)
+  _c[cnorm]=$(tput cnorm)
 
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
@@ -103,19 +114,7 @@ main() {
 
   }
 
-  
   initscreen
-
-  declare -A _c
-  for k in {0..7}; do 
-    _c[f$k]=$(tput setaf "$k")
-    _c[b$k]=$(tput setab "$k")
-  done
-  _c[res]=$(tput sgr0)
-  _c[sc]=$(tput sc)
-  _c[rc]=$(tput rc)
-  _c[civis]=$(tput civis)
-  _c[cnorm]=$(tput cnorm)
 
   while ((_restart)); do
     while ((_restart)); do starttest ; done
@@ -223,15 +222,30 @@ centerblock() {
 
 }
 
-cleanup() {
-  # clear out standard input
-  read -rt 0.001 && cat </dev/stdin>/dev/null
+trap cleanup HUP TERM EXIT INT
 
-  # tput reset
-  tput rmcup
-  tput cnorm
-  stty echo
-  tput sgr0
+cleanup() {
+
+  # this function gets triggered on both EXIT INT
+  # causing it to get triggered twice on ctrl+c
+  # therefor testing existence of _tmpE (ERR.sh)
+  [[ -f $_tmpE ]] && {
+
+    ((_gotscreen)) && {
+      # clear out standard input
+      read -rt 0.001 && cat </dev/stdin>/dev/null
+
+      # tput reset
+      tput rmcup
+      tput cnorm
+      stty echo
+      tput sgr0
+    }
+    
+    >&2 cat "$_tmpE"
+    rm "${_tmpE:?}"
+  }
+  
   exit 0
 }
 
@@ -330,9 +344,11 @@ EOCONF
 set -E
 trap '[ "$?" -ne 77 ] || exit 77' ERR
 
-ERX() { >&2 echo  "[ERROR] $*" ; exit 77 ;}
-ERR() { >&2 echo  "[WARNING] $*" ;}
-ERM() { >&2 echo  "$*" ;}
+_tmpE=$(mktemp)
+
+ERX() { echo  "[ERROR] $*" > "$_tmpE" ; exit 77 ;}
+ERR() { echo  "[WARNING] $*" > "$_tmpE"  ;}
+ERM() { echo  "$*" > "$_tmpE"  ;}
 ERH(){
   ___printhelp >&2
   [[ -n "$*" ]] && printf '\n%s\n' "$*" >&2
@@ -375,9 +391,24 @@ highscore() {
 
 initscreen() {
 
+  stty -echo
+  tput smcup
+  tput civis
+
+  resize
+
+  _gotscreen=1
+
+  # TODO: resize trap gets triggered on first keypress...
+  # trap resize SIGWINCH
+
+}
+
+resize() {
+
+  tput clear
   read -r _height _width < <(stty size)
 
-  # max width, set with -w or default to width-2
   : "${_maxW:=${__o[width]:-$TYPISKT_WIDTH}}"
   _maxW=$(( (_width-2)<_maxW?_width-2:_maxW ))
 
@@ -395,13 +426,7 @@ initscreen() {
   _underline="\e[${pos[fY]};${pos[fX]}H$f"
 
   blank=$(printf "%${_width}s" " ")
-  
-  stty -echo
-  tput smcup
-  tput civis
-  tput clear
-
-  trap cleanup HUP TERM EXIT INT
+  _resize=1
 }
 
 listcorpuses() {
@@ -799,7 +824,7 @@ starttest() {
   local key c1 c2 exd
   declare -i lasttime=-1 status sl cl
 
-  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
+  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1 _resize=0
   _string=""
 
   op=$_underline
@@ -829,9 +854,9 @@ starttest() {
   setline
   nextword
   ((_time)) && timer
-
-  while : ; do
-
+  
+  until ((_resize)) ; do
+    
     ((_start && SECONDS>_t && _time)) && break
     ((_time || ${#wordlist[@]}!=_words)) || break
 
@@ -930,7 +955,7 @@ starttest() {
 
   done
 
-  _restart=0
+  ((_resize)) || _restart=0
 }
 
 timer() {

@@ -2,9 +2,24 @@
 
 initscreen() {
 
+  stty -echo
+  tput smcup
+  tput civis
+
+  resize
+
+  _gotscreen=1
+
+  # TODO: resize trap gets triggered on first keypress...
+  # trap resize SIGWINCH
+
+}
+
+resize() {
+
+  tput clear
   read -r _height _width < <(stty size)
 
-  # max width, set with -w or default to width-2
   : "${_maxW:=${__o[width]:-$TYPISKT_WIDTH}}"
   _maxW=$(( (_width-2)<_maxW?_width-2:_maxW ))
 
@@ -22,11 +37,5 @@ initscreen() {
   _underline="\e[${pos[fY]};${pos[fX]}H$f"
 
   blank=$(printf "%${_width}s" " ")
-  
-  stty -echo
-  tput smcup
-  tput civis
-  tput clear
-
-  trap cleanup HUP TERM EXIT INT
+  _resize=1
 }

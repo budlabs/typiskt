@@ -5,7 +5,7 @@ starttest() {
   local key c1 c2 exd
   declare -i lasttime=-1 status sl cl
 
-  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
+  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1 _resize=0
   _string=""
 
   op=$_underline
@@ -35,9 +35,9 @@ starttest() {
   setline
   nextword
   ((_time)) && timer
-
-  while : ; do
-
+  
+  until ((_resize)) ; do
+    
     ((_start && SECONDS>_t && _time)) && break
     ((_time || ${#wordlist[@]}!=_words)) || break
 
@@ -136,5 +136,5 @@ starttest() {
 
   done
 
-  _restart=0
+  ((_resize)) || _restart=0
 }

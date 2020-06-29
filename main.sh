@@ -16,8 +16,8 @@ main() {
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
-  declare -i _seed _lastexercise _start
-  declare -i _underlinewidth=14
+  declare -i _seed _lastexercise _start _gotscreen=0
+  declare -i _underlinewidth=14 _resize=0 
 
   declare -a exercises
   declare -a wordlist   # wordlist as array
@@ -26,6 +26,17 @@ main() {
   declare -a nextline activeline
 
   declare -A pos
+  declare -A _c
+
+  for k in {0..7}; do 
+    _c[f$k]=$(tput setaf "$k")
+    _c[b$k]=$(tput setab "$k")
+  done
+  _c[res]=$(tput sgr0)
+  _c[sc]=$(tput sc)
+  _c[rc]=$(tput rc)
+  _c[civis]=$(tput civis)
+  _c[cnorm]=$(tput cnorm)
 
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
@@ -83,19 +94,7 @@ main() {
 
   }
 
-  
   initscreen
-
-  declare -A _c
-  for k in {0..7}; do 
-    _c[f$k]=$(tput setaf "$k")
-    _c[b$k]=$(tput setab "$k")
-  done
-  _c[res]=$(tput sgr0)
-  _c[sc]=$(tput sc)
-  _c[rc]=$(tput rc)
-  _c[civis]=$(tput civis)
-  _c[cnorm]=$(tput cnorm)
 
   while ((_restart)); do
     while ((_restart)); do starttest ; done

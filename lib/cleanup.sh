@@ -1,13 +1,28 @@
 #!/bin/bash
 
-cleanup() {
-  # clear out standard input
-  read -rt 0.001 && cat </dev/stdin>/dev/null
+trap cleanup HUP TERM EXIT INT
 
-  # tput reset
-  tput rmcup
-  tput cnorm
-  stty echo
-  tput sgr0
+cleanup() {
+
+  # this function gets triggered on both EXIT INT
+  # causing it to get triggered twice on ctrl+c
+  # therefor testing existence of _tmpE (ERR.sh)
+  [[ -f $_tmpE ]] && {
+
+    ((_gotscreen)) && {
+      # clear out standard input
+      read -rt 0.001 && cat </dev/stdin>/dev/null
+
+      # tput reset
+      tput rmcup
+      tput cnorm
+      stty echo
+      tput sgr0
+    }
+    
+    >&2 cat "$_tmpE"
+    rm "${_tmpE:?}"
+  }
+  
   exit 0
 }
