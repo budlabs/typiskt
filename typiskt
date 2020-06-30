@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.28.26
-updated: 2020-06-28 by budRich
+typiskt - version: 2020.07.01.6
+updated: 2020-07-01 by budRich
 EOB
 }
 
@@ -24,10 +24,12 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
+  _sdir=/usr/share/typiskt
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
   _listhash=""
+  _activeindent=""
 
   ((__o[list])) && listcorpuses
 
@@ -35,8 +37,8 @@ main() {
   declare -i _activepos _nextpos _lastpos
   declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
-  declare -i _seed _lastexercise _start
-  declare -i _underlinewidth=14
+  declare -i _seed _lastexercise _start _gotscreen=0
+  declare -i _underlinewidth=14 _resize=0 
 
   declare -a exercises
   declare -a wordlist   # wordlist as array
@@ -45,6 +47,17 @@ main() {
   declare -a nextline activeline
 
   declare -A pos
+  declare -A _c
+
+  for k in {0..7}; do 
+    _c[f$k]=$(tput setaf "$k")
+    _c[b$k]=$(tput setab "$k")
+  done
+  _c[res]=$(tput sgr0)
+  _c[sc]=$(tput sc)
+  _c[rc]=$(tput rc)
+  _c[civis]=$(tput civis)
+  _c[cnorm]=$(tput cnorm)
 
   : "${_seed:=${__o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
@@ -90,26 +103,19 @@ main() {
                     __o[difficulty] < 11 ? __o[difficulty] :
                     __o[difficulty] > 10 ? 10 : 0 ))
 
+    local maskfile
+    
+    [[ -f "${maskfile:=$_dir/wordmasks}"  ]] || unset maskfile
+    [[ -f "${maskfile:=$_sdir/wordmasks}" ]] || _difficulty=0
+    
     ((_difficulty)) && {
-      mapfile -t wordmasks < "$_dir/wordmasks"
+      mapfile -t wordmasks < "$maskfile"
       _difficulty=$(( ${#wordmasks[@]} * ((11-_difficulty) +4) ))
     }
 
   }
 
-  
   initscreen
-
-  declare -A _c
-  for k in {0..7}; do 
-    _c[f$k]=$(tput setaf "$k")
-    _c[b$k]=$(tput setab "$k")
-  done
-  _c[res]=$(tput sgr0)
-  _c[sc]=$(tput sc)
-  _c[rc]=$(tput rc)
-  _c[civis]=$(tput civis)
-  _c[cnorm]=$(tput cnorm)
 
   while ((_restart)); do
     while ((_restart)); do starttest ; done
@@ -217,15 +223,30 @@ centerblock() {
 
 }
 
-cleanup() {
-  # clear out standard input
-  read -rt 0.001 && cat </dev/stdin>/dev/null
+trap cleanup HUP TERM EXIT INT
 
-  # tput reset
-  tput rmcup
-  tput cnorm
-  stty echo
-  tput sgr0
+cleanup() {
+
+  # this function gets triggered on both EXIT INT
+  # causing it to get triggered twice on ctrl+c
+  # therefor testing existence of _tmpE (ERR.sh)
+  [[ -f $_tmpE ]] && {
+
+    ((_gotscreen)) && {
+      # clear out standard input
+      read -rt 0.001 && cat </dev/stdin>/dev/null
+
+      # tput reset
+      tput rmcup
+      tput cnorm
+      stty echo
+      tput sgr0
+    }
+    
+    >&2 cat "$_tmpE"
+    rm "${_tmpE:?}"
+  }
+  
   exit 0
 }
 
@@ -324,9 +345,11 @@ EOCONF
 set -E
 trap '[ "$?" -ne 77 ] || exit 77' ERR
 
-ERX() { >&2 echo  "[ERROR] $*" ; exit 77 ;}
-ERR() { >&2 echo  "[WARNING] $*" ;}
-ERM() { >&2 echo  "$*" ;}
+_tmpE=$(mktemp)
+
+ERX() { echo  "[ERROR] $*" > "$_tmpE" ; exit 77 ;}
+ERR() { echo  "[WARNING] $*" > "$_tmpE"  ;}
+ERM() { echo  "$*" > "$_tmpE"  ;}
 ERH(){
   ___printhelp >&2
   [[ -n "$*" ]] && printf '\n%s\n' "$*" >&2
@@ -369,9 +392,24 @@ highscore() {
 
 initscreen() {
 
+  stty -echo
+  tput smcup
+  tput civis
+
+  resize
+
+  _gotscreen=1
+
+  # TODO: resize trap gets triggered on first keypress...
+  # trap resize SIGWINCH
+
+}
+
+resize() {
+
+  tput clear
   read -r _height _width < <(stty size)
 
-  # max width, set with -w or default to width-2
   : "${_maxW:=${__o[width]:-$TYPISKT_WIDTH}}"
   _maxW=$(( (_width-2)<_maxW?_width-2:_maxW ))
 
@@ -388,32 +426,37 @@ initscreen() {
   f=$(printf "%${_underlinewidth}s" " ")  f=${f// /─}
   _underline="\e[${pos[fY]};${pos[fX]}H$f"
 
+  ((pos[aX])) && _activeindent="$(printf "%${pos[aX]}s" " ")"
   blank=$(printf "%${_width}s" " ")
-  
-  stty -echo
-  tput smcup
-  tput civis
-  tput clear
-
-  trap cleanup HUP TERM EXIT INT
+  _resize=1
 }
 
 listcorpuses() {
-  ls "$_dir/wordlists" >&2
+
+  {
+    [[ -d "$_dir/wordlists"  ]] && ls "$_dir/wordlists"
+    [[ -d "$_sdir/wordlists" ]] && ls "$_sdir/wordlists"
+  } | sort -u
   exit
 }
 
 makelist() {
 
-  local list exd exf tmpf exh
+  local list exd exf tmpf exh corpus
   tmpf=$(mktemp)
 
   case "$_mode" in
 
-    words ) list="$_dir/wordlists/${__o[corpus]:-$TYPISKT_WORDLIST}" ;;
+   ( words )
+     corpus=${__o[corpus]:-$TYPISKT_WORDLIST}
+
+     [[ -f "${list:=$_dir/wordlists/$corpus}"  ]] || unset list
+     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] || unset list
+     : "${list:=$corpus}"
+
+    ;;
 
     ( book )
-      # list="$_dir/text/${__o[book]}"
       list=${__o[book]}
       [[ -f $list ]] || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
@@ -459,11 +502,13 @@ makelist() {
 
       list="$exf"
     ;;
+    
   esac
 
   [[ -f $list ]] || ERX "cannot find $list"
   _listhash=$(md5sum "$list" | cut -f1 -d' ')
   mapfile -t wordlist < "$list"
+  # cat "$tmpf" > /home/bud/git/bud/src/new/typisktstart/op
   rm "$tmpf"
 }
 
@@ -507,7 +552,7 @@ parseconfig() {
       exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
     esac
 
-  } ; done < "$TYPISKT_CONFIG/config"
+  } ; done < "$TYPISKT_CONFIG_DIR/config"
 }
 
 randomize() {
@@ -532,8 +577,22 @@ randomize() {
 
     [[ -f $_bookmarkfile ]] && _bookmark=$(< "$_bookmarkfile")
 
-    ((n+=_bookmark))
-    eval "words=({$n..$_bookmark})"
+    t=$((${#wordlist[@]}-1))
+    g=$((t-_bookmark))
+
+    ERM "g=$g t=$t n=$n"
+
+    ((g<n)) && while ((${#words[@]}<n)); do
+      if ((t<n)); then
+        eval "words+=({$t..0})"
+      else
+        eval "words+=({$n..0})"
+      fi
+    done
+
+    eval "words+=({$t..$_bookmark})"
+    # n=$((t-_bookmark))
+    
   else
     t=$((${#wordlist[@]}-1))
     
@@ -543,7 +602,7 @@ randomize() {
 
 results() {
 
-  declare -i clicksum bh bw nextex time
+  declare -i clicksum bh bw nextex time bm
 
   time=$((_time?_time:SECONDS-_start))
   clicksum=$((_clicks-_badclicks>1?_clicks-_badclicks:1))
@@ -557,7 +616,9 @@ results() {
   [[ ${acc:0:1} = - ]] && acc=0.0
   
   [[ -f $_bookmarkfile ]] && {
-    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+    bm=$(( (_bookmark+_words)-1))
+    while ((bm > ${#wordlist[@]}-1 )); do ((bm-=${#wordlist[@]} )) ; done
+    echo "$bm" > "$_bookmarkfile"
   }
 
   case "$_mode" in
@@ -694,8 +755,6 @@ setline() {
 
   local k
 
-  ((pos[aX])) && indent="$(printf "%${pos[aX]}s" " ")"
-
   unset 'activeline[@]'
   for k in "${!nextline[@]}"; do
     activeline[$k]=${nextline[$k]}
@@ -705,9 +764,9 @@ setline() {
   _nextpos=0
   makeline
 
-  op+="\e[${pos[aY]};0H$blank\n${blank}\n${blank}\e[${pos[aY]};0H"
-  op+="$indent${activeline[*]}\n"
-  op+="$indent${nextline[*]}"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="$_activeindent${activeline[*]}\n"
+  op+="$_activeindent${nextline[*]}"
 
 }
 
@@ -750,7 +809,7 @@ makeline() {
 
     wl=${#w}
 
-    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+    (( (ll+=(wl+1)) < _maxW || _prop & m[linebreak])) || break
 
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")
@@ -782,7 +841,7 @@ starttest() {
   local key c1 c2 exd
   declare -i lasttime=-1 status sl cl
 
-  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1
+  _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1 _resize=0
   _string=""
 
   op=$_underline
@@ -812,9 +871,9 @@ starttest() {
   setline
   nextword
   ((_time)) && timer
-
-  while : ; do
-
+  
+  until ((_resize)) ; do
+    
     ((_start && SECONDS>_t && _time)) && break
     ((_time || ${#wordlist[@]}!=_words)) || break
 
@@ -913,7 +972,7 @@ starttest() {
 
   done
 
-  _restart=0
+  ((_resize)) || _restart=0
 }
 
 timer() {
