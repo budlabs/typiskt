@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.06.29.20
-updated: 2020-06-29 by budRich
+typiskt - version: 2020.07.01.5
+updated: 2020-07-01 by budRich
 EOB
 }
 
@@ -29,6 +29,7 @@ main() {
   _exercisefile=""
   _underline=""
   _listhash=""
+  _activeindent=""
 
   ((__o[list])) && listcorpuses
 
@@ -425,6 +426,7 @@ resize() {
   f=$(printf "%${_underlinewidth}s" " ")  f=${f// /─}
   _underline="\e[${pos[fY]};${pos[fX]}H$f"
 
+  ((pos[aX])) && _activeindent="$(printf "%${pos[aX]}s" " ")"
   blank=$(printf "%${_width}s" " ")
   _resize=1
 }
@@ -455,7 +457,6 @@ makelist() {
     ;;
 
     ( book )
-
       list=${__o[book]}
       [[ -f $list ]] || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
@@ -501,11 +502,13 @@ makelist() {
 
       list="$exf"
     ;;
+    
   esac
 
   [[ -f $list ]] || ERX "cannot find $list"
   _listhash=$(md5sum "$list" | cut -f1 -d' ')
   mapfile -t wordlist < "$list"
+  # cat "$tmpf" > /home/bud/git/bud/src/new/typisktstart/op
   rm "$tmpf"
 }
 
@@ -574,8 +577,22 @@ randomize() {
 
     [[ -f $_bookmarkfile ]] && _bookmark=$(< "$_bookmarkfile")
 
-    ((n+=_bookmark))
-    eval "words=({$n..$_bookmark})"
+    t=$((${#wordlist[@]}-1))
+    g=$((t-_bookmark))
+
+    ERM "g=$g t=$t n=$n"
+
+    ((g<n)) && while ((${#words[@]}<n)); do
+      if ((t<n)); then
+        eval "words+=({$t..0})"
+      else
+        eval "words+=({$n..0})"
+      fi
+    done
+
+    eval "words+=({$t..$_bookmark})"
+    # n=$((t-_bookmark))
+    
   else
     t=$((${#wordlist[@]}-1))
     
@@ -585,7 +602,7 @@ randomize() {
 
 results() {
 
-  declare -i clicksum bh bw nextex time
+  declare -i clicksum bh bw nextex time bm
 
   time=$((_time?_time:SECONDS-_start))
   clicksum=$((_clicks-_badclicks>1?_clicks-_badclicks:1))
@@ -599,7 +616,9 @@ results() {
   [[ ${acc:0:1} = - ]] && acc=0.0
   
   [[ -f $_bookmarkfile ]] && {
-    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+    bm=$(( (_bookmark+_words)-1))
+    while ((bm > ${#wordlist[@]}-1 )); do ((bm-=${#wordlist[@]} )) ; done
+    echo "$bm" > "$_bookmarkfile"
   }
 
   case "$_mode" in
@@ -736,8 +755,6 @@ setline() {
 
   local k
 
-  ((pos[aX])) && indent="$(printf "%${pos[aX]}s" " ")"
-
   unset 'activeline[@]'
   for k in "${!nextline[@]}"; do
     activeline[$k]=${nextline[$k]}
@@ -747,9 +764,9 @@ setline() {
   _nextpos=0
   makeline
 
-  op+="\e[${pos[aY]};0H$blank\n${blank}\n${blank}\e[${pos[aY]};0H"
-  op+="$indent${activeline[*]}\n"
-  op+="$indent${nextline[*]}"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="$_activeindent${activeline[*]}\n"
+  op+="$_activeindent${nextline[*]}"
 
 }
 
@@ -792,7 +809,7 @@ makeline() {
 
     wl=${#w}
 
-    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+    (( (ll+=(wl+1)) < _maxW || _prop & m[linebreak])) || break
 
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")

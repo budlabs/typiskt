@@ -36,6 +36,7 @@ resize() {
   f=$(printf "%${_underlinewidth}s" " ")  f=${f// /─}
   _underline="\e[${pos[fY]};${pos[fX]}H$f"
 
+  ((pos[aX])) && _activeindent="$(printf "%${pos[aX]}s" " ")"
   blank=$(printf "%${_width}s" " ")
   _resize=1
 }

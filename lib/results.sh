@@ -2,7 +2,7 @@
 
 results() {
 
-  declare -i clicksum bh bw nextex time
+  declare -i clicksum bh bw nextex time bm
 
   time=$((_time?_time:SECONDS-_start))
   clicksum=$((_clicks-_badclicks>1?_clicks-_badclicks:1))
@@ -16,7 +16,9 @@ results() {
   [[ ${acc:0:1} = - ]] && acc=0.0
   
   [[ -f $_bookmarkfile ]] && {
-    echo "$((_bookmark+_words))" > "$_bookmarkfile"
+    bm=$(( (_bookmark+_words)-1))
+    while ((bm > ${#wordlist[@]}-1 )); do ((bm-=${#wordlist[@]} )) ; done
+    echo "$bm" > "$_bookmarkfile"
   }
 
   case "$_mode" in

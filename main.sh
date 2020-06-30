@@ -9,6 +9,7 @@ main() {
   _exercisefile=""
   _underline=""
   _listhash=""
+  _activeindent=""
 
   ((__o[list])) && listcorpuses
 

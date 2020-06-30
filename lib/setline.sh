@@ -7,8 +7,6 @@ setline() {
 
   local k
 
-  ((pos[aX])) && indent="$(printf "%${pos[aX]}s" " ")"
-
   unset 'activeline[@]'
   for k in "${!nextline[@]}"; do
     activeline[$k]=${nextline[$k]}
@@ -18,9 +16,9 @@ setline() {
   _nextpos=0
   makeline
 
-  op+="\e[${pos[aY]};0H$blank\n${blank}\n${blank}\e[${pos[aY]};0H"
-  op+="$indent${activeline[*]}\n"
-  op+="$indent${nextline[*]}"
+  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
+  op+="$_activeindent${activeline[*]}\n"
+  op+="$_activeindent${nextline[*]}"
 
 }
 
@@ -63,7 +61,7 @@ makeline() {
 
     wl=${#w}
 
-    (( (ll+=(wl+1)) > _maxW )) && [[ -z ${__o[source]} ]] && break
+    (( (ll+=(wl+1)) < _maxW || _prop & m[linebreak])) || break
 
     # index in array is also xposition
     nextline+=([$((ll-(wl+1)))]="$w")

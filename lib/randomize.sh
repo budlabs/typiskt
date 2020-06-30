@@ -22,8 +22,22 @@ randomize() {
 
     [[ -f $_bookmarkfile ]] && _bookmark=$(< "$_bookmarkfile")
 
-    ((n+=_bookmark))
-    eval "words=({$n..$_bookmark})"
+    t=$((${#wordlist[@]}-1))
+    g=$((t-_bookmark))
+
+    ERM "g=$g t=$t n=$n"
+
+    ((g<n)) && while ((${#words[@]}<n)); do
+      if ((t<n)); then
+        eval "words+=({$t..0})"
+      else
+        eval "words+=({$n..0})"
+      fi
+    done
+
+    eval "words+=({$t..$_bookmark})"
+    # n=$((t-_bookmark))
+    
   else
     t=$((${#wordlist[@]}-1))
     

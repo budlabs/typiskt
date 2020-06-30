@@ -17,7 +17,6 @@ makelist() {
     ;;
 
     ( book )
-
       list=${__o[book]}
       [[ -f $list ]] || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
@@ -63,10 +62,12 @@ makelist() {
 
       list="$exf"
     ;;
+    
   esac
 
   [[ -f $list ]] || ERX "cannot find $list"
   _listhash=$(md5sum "$list" | cut -f1 -d' ')
   mapfile -t wordlist < "$list"
+  # cat "$tmpf" > /home/bud/git/bud/src/new/typisktstart/op
   rm "$tmpf"
 }
