@@ -12,4 +12,4 @@ wrap:     50
 %%cat -v '\(^#!/\)' lib/*%%
 
 %%cat ___getopt%%
-main "${@:-}"
+main "${@}"

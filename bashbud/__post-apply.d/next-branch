@@ -6,7 +6,8 @@ if [[ -d "$projectdir/next" ]]; then
             "$projectdir/README.md"            \
             "$projectdir/LICENSE"              \
             "$projectdir/Makefile"             \
-            "$projectdir/wordmasks"             \
+            "$projectdir/wordmasks"            \
+            "$projectdir/installprep.sh"       \
             "$projectdir/wordlists"            \
             "$projectdir/${projectdir##*/}.1"  \
 

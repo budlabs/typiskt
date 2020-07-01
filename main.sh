@@ -4,7 +4,7 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
-  _sdir=/usr/share/typiskt
+  _sdir=$(installdir)
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
