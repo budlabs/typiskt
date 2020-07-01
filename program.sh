@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.01.12
+typiskt - version: 2020.07.01.15
 updated: 2020-07-01 by budRich
 EOB
 }
