@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.01.6
+typiskt - version: 2020.07.01.15
 updated: 2020-07-01 by budRich
 EOB
 }
@@ -24,7 +24,7 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
-  _sdir=/usr/share/typiskt
+  _sdir=$(installdir)
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
@@ -430,6 +430,8 @@ resize() {
   blank=$(printf "%${_width}s" " ")
   _resize=1
 }
+
+installdir() { echo "$_dir" ;}
 
 listcorpuses() {
 
@@ -1043,6 +1045,6 @@ done
   && __lastarg="" 
 
 
-main "${@:-}"
+main "${@}"
 
 

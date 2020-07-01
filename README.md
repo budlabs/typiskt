@@ -149,6 +149,12 @@ Show help and exit.
 `--version`|`-v`  
 Show version and exit.
 
+## updates
+
+### 2020.07.01
+initial release
+
+
 [typing_test]: https://github.com/ecly/typing_test
 [epbud2txt]: https://github.com/kevinboone/epub2txt2
 
