@@ -151,7 +151,12 @@ Show version and exit.
 
 ## updates
 
+### 2020.07.02.2
+improved the make process further, cleaned up repository
+files that will be installed to /etc are located in config
+
 ### 2020.07.02
+
 updated makefile, should now work better especially when
 installed with package managers.
 
