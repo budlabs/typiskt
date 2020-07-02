@@ -1,36 +1,30 @@
-SCRIPT  = typiskt
-MANPAGE = $(SCRIPT).1
-PREFIX  = /usr
-DESTDIR =
-INSTDIR = $(DESTDIR)$(PREFIX)
-CONFDIR = $(INSTDIR)/share/$(SCRIPT)
-CORPDIR = $(CONFDIR)/wordlists
-INSTBIN = $(INSTDIR)/bin
-INSTMAN = $(INSTDIR)/share/man/man1
+PROGNM ?= typiskt
+PREFIX ?= /usr
+BINDIR ?= $(PREFIX)/bin
+SHRDIR ?= $(PREFIX)/share
+MANDIR ?= $(SHRDIR)/man/man1
 
-install: $(SCRIPT)mod
-	test -d $(INSTBIN) || mkdir -p $(INSTBIN)
-	test -d $(INSTMAN) || mkdir -p $(INSTMAN)
-	test -d $(CORPDIR) || mkdir -p $(CORPDIR)
+MANPAGE  = $(PROGNM).1
+ASSETDIR = $(SHRDIR)/$(PROGNM)
 
-	@for corpus in wordlists/* ; do           \
-		test -f $(CORPDIR)/$${corpus##*/}       \
-		|| install -m 0644 $$corpus $(CORPDIR); \
-	done
 
-	install -m 0755 $(SCRIPT)mod  $(INSTBIN)/$(SCRIPT)
-	install -m 0644 $(MANPAGE) $(INSTMAN)
-	install -m 0644 wordmasks  $(CONFDIR)
 .PHONY: install
+install: $(PROGNM)mod
+	install -d  $(DESTDIR)$(BINDIR)
+	install -m755 $(PROGNM)mod  $(DESTDIR)$(BINDIR)/$(PROGNM)
+	rm $(PROGNM)mod
+	install -Dm644 wordlists/*   -t $(DESTDIR)$(ASSETDIR)/wordlists
+	install -Dm644 wordmasks     -t $(DESTDIR)$(ASSETDIR)
+	install -Dm644 $(MANPAGE)    -t $(DESTDIR)$(MANDIR)
+	install -Dm644 LICENSE       -t $(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)
 
-$(SCRIPT)mod:
-	./installprep.sh $(CONFDIR) $(SCRIPT)
 
-uninstall:
-	$(RM) $(INSTBIN)/$(SCRIPT)
-	$(RM) $(INSTMAN)/$(MANPAGE)
+$(PROGNM)mod:
+	./installprep.sh $(ASSETDIR) $(PROGNM)
 
-	@for corpus in wordlists/* ; do              \
-		$(RM) $(INSMAN) $(CORPDIR)/$${corpus##*/}; \
-	done
 .PHONY: uninstall
+uninstall:
+	rm $(DESTDIR)$(BINDIR)/$(PROGNM)
+	rm -rf $(DESTDIR)$(ASSETDIR)
+	rm $(DESTDIR)$(MANDIR)/$(MANPAGE)
+	rm -rf $(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)
