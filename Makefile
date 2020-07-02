@@ -20,7 +20,7 @@ install: $(PROGNM).out
 	install -Dm644 config/exercises/README.md   -t $(DESTDIR)$(ASSETDIR)/exercises
 	install -Dm644 config/wordmasks             -t $(DESTDIR)$(ASSETDIR)
 	install -Dm644 config/config                -t $(DESTDIR)$(ASSETDIR)
-	install -Dm644 $(MANPAGE)                    -t $(DESTDIR)$(MANDIR)
+	install -Dm644 $(MANPAGE)                   -t $(DESTDIR)$(MANDIR)
 	install -Dm644 LICENSE                      -t $(DESTDIR)$(SHRDIR)/licenses/$(PROGNM)
 
 	rm $(PROGNM).out
