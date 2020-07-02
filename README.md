@@ -151,7 +151,12 @@ Show version and exit.
 
 ## updates
 
+### 2020.07.02
+updated makefile, should now work better especially when
+installed with package managers.
+
 ### 2020.07.01
+
 initial release
 
 
