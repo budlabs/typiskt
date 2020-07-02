@@ -4,8 +4,13 @@ parseconfig() {
   
   local line re sp ns k v
 
-  [[ -f $TYPISKT_CONFIG_DIR/config ]] \
-    || cp -rf "$_sdir" "$TYPISKT_CONFIG_DIR"
+  [[ -f $TYPISKT_CONFIG_DIR/config ]] || {
+    mkdir -p "$TYPISKT_CONFIG_DIR"/exercises
+    cp -rf -t "$TYPISKT_CONFIG_DIR"            \
+              "$_sdir/config"                  \
+              "$_sdir/wordmasks"               \
+              "$_sdir/exercises"               
+  }
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"

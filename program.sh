@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.02.4
+typiskt - version: 2020.07.02.5
 updated: 2020-07-02 by budRich
 EOB
 }
@@ -442,8 +442,13 @@ parseconfig() {
   
   local line re sp ns k v
 
-  [[ -f $TYPISKT_CONFIG_DIR/config ]] \
-    || cp -rf "$_sdir" "$TYPISKT_CONFIG_DIR"
+  [[ -f $TYPISKT_CONFIG_DIR/config ]] || {
+    mkdir -p "$TYPISKT_CONFIG_DIR"/exercises
+    cp -rf -t "$TYPISKT_CONFIG_DIR"            \
+              "$_sdir/config"                  \
+              "$_sdir/wordmasks"               \
+              "$_sdir/exercises"               
+  }
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
