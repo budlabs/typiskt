@@ -6,9 +6,7 @@ if [[ -d "$projectdir/next" ]]; then
             "$projectdir/README.md"            \
             "$projectdir/LICENSE"              \
             "$projectdir/Makefile"             \
-            "$projectdir/wordmasks"            \
-            "$projectdir/installprep.sh"       \
-            "$projectdir/wordlists"            \
+            "$projectdir/config"               \
             "$projectdir/${projectdir##*/}.1"  \
 
   cp -f "$projectdir/program.sh"               \

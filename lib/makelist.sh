@@ -10,9 +10,8 @@ makelist() {
    ( words )
      corpus=${__o[corpus]:-$TYPISKT_WORDLIST}
 
-     [[ -f "${list:=$_dir/wordlists/$corpus}"  ]] || unset list
-     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] || unset list
-     : "${list:=$corpus}"
+     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] \
+       || list=$corpus
 
     ;;
 

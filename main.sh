@@ -4,7 +4,15 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
-  _sdir=$(installdir)
+
+  # in makefile m4 will expand ETC_CONFIG_DIR
+  # before installation
+  if [[ -d ETC_CONFIG_DIR ]]; then
+    _sdir='ETC_CONFIG_DIR'
+  else
+    _sdir="$_dir/config"
+  fi
+
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
@@ -83,13 +91,10 @@ main() {
                     __o[difficulty] < 11 ? __o[difficulty] :
                     __o[difficulty] > 10 ? 10 : 0 ))
 
-    local maskfile
-    
-    [[ -f "${maskfile:=$_dir/wordmasks}"  ]] || unset maskfile
-    [[ -f "${maskfile:=$_sdir/wordmasks}" ]] || _difficulty=0
+    [[ -f $_sdir/wordmasks ]] || _difficulty=0
     
     ((_difficulty)) && {
-      mapfile -t wordmasks < "$maskfile"
+      mapfile -t wordmasks < "$_sdir/wordmasks"
       _difficulty=$(( ${#wordmasks[@]} * ((11-_difficulty) +4) ))
     }
 

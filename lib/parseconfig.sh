@@ -5,7 +5,7 @@ parseconfig() {
   local line re sp ns k v
 
   [[ -f $TYPISKT_CONFIG_DIR/config ]] \
-    || createconf "$TYPISKT_CONFIG_DIR"
+    || cp -rf "$_sdir" "$TYPISKT_CONFIG_DIR"
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
