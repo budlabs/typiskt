@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.02.1
+typiskt - version: 2020.07.02.5
 updated: 2020-07-02 by budRich
 EOB
 }
@@ -24,7 +24,15 @@ main() {
 
   _source="$(readlink -f "${BASH_SOURCE[0]}")"
   _dir="${_source%/*}"
-  _sdir=$(installdir)
+
+  # in makefile m4 will expand ETC_CONFIG_DIR
+  # before installation
+  if [[ -d ETC_CONFIG_DIR ]]; then
+    _sdir='ETC_CONFIG_DIR'
+  else
+    _sdir="$_dir/config"
+  fi
+
   _bookmarkfile=""
   _exercisefile=""
   _underline=""
@@ -103,13 +111,10 @@ main() {
                     __o[difficulty] < 11 ? __o[difficulty] :
                     __o[difficulty] > 10 ? 10 : 0 ))
 
-    local maskfile
-    
-    [[ -f "${maskfile:=$_dir/wordmasks}"  ]] || unset maskfile
-    [[ -f "${maskfile:=$_sdir/wordmasks}" ]] || _difficulty=0
+    [[ -f $_sdir/wordmasks ]] || _difficulty=0
     
     ((_difficulty)) && {
-      mapfile -t wordmasks < "$maskfile"
+      mapfile -t wordmasks < "$_sdir/wordmasks"
       _difficulty=$(( ${#wordmasks[@]} * ((11-_difficulty) +4) ))
     }
 
@@ -250,98 +255,6 @@ cleanup() {
   exit 0
 }
 
-createconf() {
-local trgdir="$1"
-declare -a aconfdirs
-
-aconfdirs=(
-"$trgdir/exercises"
-)
-
-mkdir -p "$1" "${aconfdirs[@]}"
-
-cat << 'EOCONF' > "$trgdir/exercises/add-gtypist-exercises.sh"
-
-trap 'rm "$tmp"' EXIT
-
-_source="$(readlink -f "${BASH_SOURCE[0]}")"
-d="${_source%/*}"
-
-url='https://github.com/inaimathi/gtypist-single-space/raw/master/gtypist.typ'
-tmp=$(mktemp)
-
-mkdir -p "${tmp%/*}"
-wget -qO "$tmp" "$url" || exit
-
-awk -v d=$d '
-  match($0,/\s*\*:_(.+)/,ma)   {f=d "/" ma[1]}
-  match($0,/^\s*[SD]:(.+)/,ma) {get=1; print ma[1] >> f }
-  /^$/ {get=0}
-  get == 1 && match($0,/\s*:(.+)/,ma) {print ma[1] >> f }
-
-' "$tmp"
-
-declare -i c
-
-for f in "$d"/* ; do
-  [[ ${f##*/} =~ ([^C])_R_L([0-9]+) ]] && {
-    name=${BASH_REMATCH[1]}
-    num=${BASH_REMATCH[2]}
-    mkdir -p "$d/$name"
-    tf=$d/$name/$num
-    awk -v f=$tf '{for (i=1;i<=NF;i++) {print $i >> f}}' "$f"
-    rm "$f"
-  }
-
-  [[ ${f##*/} =~ C_R_.+ ]] && {
-    name=C
-    num=$((c++))
-    mkdir -p "$d/$name"
-    tf=$d/$name/$num
-    awk -v f=$tf '{for (i=1;i<=NF;i++) {print $i >> f}}' "$f"
-    rm "$f"
-  }
-done
-EOCONF
-
-chmod +x "$trgdir/exercises/add-gtypist-exercises.sh"
-cat << 'EOCONF' > "$trgdir/exercises/README.md"
-when **typiskt** is executed with the `--exercise ARG` option, it will look in this directory for a sub directory with the same name as ARG. **typiskt** doesn't come with any exercises, but executing the script: `add-gtypist-exercises.sh` will download and convert the default English exercises from <https://github.com/inaimathi/gtypist-single-space>, and add them to this directory.
-EOCONF
-
-cat << 'EOCONF' > "$trgdir/config"
-# can also be set with --corpus commandlineoption
-# or environment variable TYPISKT_WORDLIST
-# list wordlists with --list commandlineoption
-default-wordlist = english-advanced
-
-# can also be set with --width commandlineoption
-# or environment variable TYPISKT_WIDTH
-# maximum width (in columns) of lines
-# if max-width > COLUMNS-2, max-width=COLUMNS-2
-maxwidth = 50
-
-# can also be set with environment variable TYPISKT_CACHE
-# path where to store chache files like highscores
-cache-dir = ~/.cache/typiskt
-
-# can also be set with environment variable TYPISKT_TIME_FORMAT
-# Time format to use in highscore list, see date(1)
-# for more format options
-highscore-time-format = %y/%m/%d
-
-# in excercise mode minimum must be reached to
-# proceed to the next exercise. (0=no minimum)
-# can also be set with environment variable TYPISKT_MIN_ACC
-exercise-minimum-accuracy = 96
-# can also be set with environment variable TYPISKT_MIN_WPM
-exercise-minimum-wpm = 0
-
-# syntax:ssHash
-EOCONF
-
-}
-
 set -E
 trap '[ "$?" -ne 77 ] || exit 77' ERR
 
@@ -431,14 +344,9 @@ resize() {
   _resize=1
 }
 
-installdir() { echo "$_dir" ;}
-
 listcorpuses() {
-
-  {
-    [[ -d "$_dir/wordlists"  ]] && ls "$_dir/wordlists"
-    [[ -d "$_sdir/wordlists" ]] && ls "$_sdir/wordlists"
-  } | sort -u
+  local d
+  [[ -d "${d:=_sdir/wordlists}" ]] && ls "$d"
   exit
 }
 
@@ -452,9 +360,8 @@ makelist() {
    ( words )
      corpus=${__o[corpus]:-$TYPISKT_WORDLIST}
 
-     [[ -f "${list:=$_dir/wordlists/$corpus}"  ]] || unset list
-     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] || unset list
-     : "${list:=$corpus}"
+     [[ -f "${list:=$_sdir/wordlists/$corpus}" ]] \
+       || list=$corpus
 
     ;;
 
@@ -535,8 +442,13 @@ parseconfig() {
   
   local line re sp ns k v
 
-  [[ -f $TYPISKT_CONFIG_DIR/config ]] \
-    || createconf "$TYPISKT_CONFIG_DIR"
+  [[ -f $TYPISKT_CONFIG_DIR/config ]] || {
+    mkdir -p "$TYPISKT_CONFIG_DIR"/exercises
+    cp -rf -t "$TYPISKT_CONFIG_DIR"            \
+              "$_sdir/config"                  \
+              "$_sdir/wordmasks"               \
+              "$_sdir/exercises"               
+  }
 
   sp='[[:space:]]' ns='[^[:space:]]'
   re="^$sp*([^#]$ns+)$sp*=$sp*($ns+)$sp*\$"
