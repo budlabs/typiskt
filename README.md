@@ -169,7 +169,12 @@ Show version and exit.
 
 ## updates
 
+### 2020.07.03
+Updated dependency list, and added checkdependencies()
+function to address issue: #5 (thanks @kattjevfel)
+
 ### 2020.07.02.2
+
 improved the make process further, cleaned up repository
 files that will be installed to /etc are located in config
 
