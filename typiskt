@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.02.6
-updated: 2020-07-02 by budRich
+typiskt - version: 2020.07.03.8
+updated: 2020-07-03 by budRich
 EOB
 }
 
@@ -228,6 +228,17 @@ centerblock() {
 
 }
 
+checkdependencies() {
+  local msg
+
+  for d in "${__deps[@]}"; do
+    command -v "$d" > /dev/null \
+      || msg+="could not find command $d"$'\n'
+  done
+
+  [[ -n $msg ]] && ERX "$msg"
+}
+
 trap cleanup HUP TERM EXIT INT
 
 cleanup() {
@@ -443,6 +454,9 @@ parseconfig() {
   local line re sp ns k v
 
   [[ -f $TYPISKT_CONFIG_DIR/config ]] || {
+
+    checkdependencies
+    
     mkdir -p "$TYPISKT_CONFIG_DIR"/exercises
     cp -rf -t "$TYPISKT_CONFIG_DIR"            \
               "$_sdir/config"                  \
@@ -921,6 +935,10 @@ wordsfromfile() {
   }
   ' "$f"
 }
+
+# dependencies
+__deps=( bash  bc  gawk  paste  wc  getopt )
+
 
 
 declare -A __o
