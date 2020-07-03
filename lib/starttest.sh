@@ -58,17 +58,17 @@ starttest() {
 
       nextchar=${_activeword:$((${#_string}-1)):1}
       [[ $key = "$nextchar" ]] && status=$_oldstatus \
-                               || status=1
+                               || status=$_statuserror
       
-      ((++_clicks && status == 1 && _badclicks++))
+      ((++_clicks && status == _statuserror && _badclicks++))
 
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
       (( _words++ + _clicks++ ))
-      ((_oldstatus != 2 && ++_badclicks)) && {
+      ((_oldstatus != _statuscorrect && ++_badclicks)) && {
         
-        ((_oldstatus == 1 || _activepos == _lastpos)) \
-          || setstatus 1
+        ((_oldstatus == _statuserror || _activepos == _lastpos)) \
+          || setstatus _statuserror
 
         sl=${#_string}
         cl=$((sl>_activelength?sl:_activelength))
@@ -87,10 +87,10 @@ starttest() {
       _string=${_string:0:-1}
 
       [[ $_string = "${_activeword:0:${#_string}}" ]] \
-        && status=3 || status=1
+        && status=$_statusactive || status=$_statuserror
 
       # penalty for erasing good char
-      ((_oldstatus == 1 || _badclicks++)) 
+      ((_oldstatus == _statuserror || _badclicks++)) 
 
     # escape sequence
     elif [[ $key = $'\u1b' ]]; then
@@ -129,7 +129,7 @@ starttest() {
       continue
     fi
 
-    [[ $_activeword = "$_string" ]] && status=2
+    [[ $_activeword = "$_string" ]] && status=$_statuscorrect
 
     ((status == _oldstatus)) || setstatus $status
     op+="$key"

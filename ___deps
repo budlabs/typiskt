@@ -1,4 +1,0 @@
-# dependencies
-__deps=( bash  bc  gawk  paste  wc  getopt )
-
-

@@ -4,6 +4,6 @@
 # program.sh and init.sh
 
 projectdir=$1
-rm -f "$projectdir"/___{version,envs,help,getopt}
+rm -f "$projectdir"/___{version,envs,help,getopt,deps}
 
 

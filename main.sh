@@ -27,6 +27,7 @@ main() {
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed _lastexercise _start _gotscreen=0
   declare -i _underlinewidth=14 _resize=0 
+  declare -i _statuserror _statuscorrect _statusactive
 
   declare -a exercises
   declare -a wordlist   # wordlist as array

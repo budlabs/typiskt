@@ -169,7 +169,30 @@ Show version and exit.
 
 ## updates
 
+### 2020.07.03.2
+A bug in
+[go-md2man](https://github.com/cpuguy83/go-md2man/issues/59)
+caused the whole manpage looking like a overthrown table, i
+forked go-md2man and is using my version to render this
+manpage. Also added options to set colors in the config.
+(*if you installed **typiskt** prior to this release you may
+have to manually add these to the configfile*)  
+
+```
+# color of active word depending on status
+# value should be an integer 0-15
+# in the background tput setaf $status-color-error
+# is used to generate the escape code
+status-color-error = 1
+status-color-correct = 2
+status-color-active = 3
+```
+
+
+thanks @BachoSeven from issue #7
+
 ### 2020.07.03
+
 Updated dependency list, and added checkdependencies()
 function to address issue: #5 (thanks @kattjevfel)
 

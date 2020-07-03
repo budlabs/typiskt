@@ -8,7 +8,7 @@ nextword() {
   _activelength=${#_activeword}
   _activepos=$_nextpos
   _nextpos=$(( _activepos+(_activelength+1) ))
-  setstatus 3
+  setstatus "$_statusactive"
 
   _string=""
 
