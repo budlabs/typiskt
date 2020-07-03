@@ -3,7 +3,7 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.03.8
+typiskt - version: 2020.07.03.30
 updated: 2020-07-03 by budRich
 EOB
 }
@@ -47,6 +47,7 @@ main() {
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed _lastexercise _start _gotscreen=0
   declare -i _underlinewidth=14 _resize=0 
+  declare -i _statuserror _statuscorrect _statusactive
 
   declare -a exercises
   declare -a wordlist   # wordlist as array
@@ -440,7 +441,7 @@ nextword() {
   _activelength=${#_activeword}
   _activepos=$_nextpos
   _nextpos=$(( _activepos+(_activelength+1) ))
-  setstatus 3
+  setstatus "$_statusactive"
 
   _string=""
 
@@ -478,9 +479,16 @@ parseconfig() {
       highscore-time-format     ) TYPISKT_TIME_FORMAT=$v   ;;
       exercise-minimum-accuracy ) TYPISKT_MIN_ACC=$v       ;;
       exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
+      status-color-error        ) _statuserror=$v         ;;
+      status-color-correct      ) _statuscorrect=$v       ;;
+      status-color-active       ) _statusactive=$v        ;;
     esac
 
   } ; done < "$TYPISKT_CONFIG_DIR/config"
+
+  : "${_statuserror:=1}"
+  : "${_statuscorrect:=2}"
+  : "${_statusactive:=3}"
 }
 
 randomize() {
@@ -822,17 +830,17 @@ starttest() {
 
       nextchar=${_activeword:$((${#_string}-1)):1}
       [[ $key = "$nextchar" ]] && status=$_oldstatus \
-                               || status=1
+                               || status=$_statuserror
       
-      ((++_clicks && status == 1 && _badclicks++))
+      ((++_clicks && status == _statuserror && _badclicks++))
 
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
       (( _words++ + _clicks++ ))
-      ((_oldstatus != 2 && ++_badclicks)) && {
+      ((_oldstatus != _statuscorrect && ++_badclicks)) && {
         
-        ((_oldstatus == 1 || _activepos == _lastpos)) \
-          || setstatus 1
+        ((_oldstatus == _statuserror || _activepos == _lastpos)) \
+          || setstatus _statuserror
 
         sl=${#_string}
         cl=$((sl>_activelength?sl:_activelength))
@@ -851,10 +859,10 @@ starttest() {
       _string=${_string:0:-1}
 
       [[ $_string = "${_activeword:0:${#_string}}" ]] \
-        && status=3 || status=1
+        && status=$_statusactive || status=$_statuserror
 
       # penalty for erasing good char
-      ((_oldstatus == 1 || _badclicks++)) 
+      ((_oldstatus == _statuserror || _badclicks++)) 
 
     # escape sequence
     elif [[ $key = $'\u1b' ]]; then
@@ -893,7 +901,7 @@ starttest() {
       continue
     fi
 
-    [[ $_activeword = "$_string" ]] && status=2
+    [[ $_activeword = "$_string" ]] && status=$_statuscorrect
 
     ((status == _oldstatus)) || setstatus $status
     op+="$key"
