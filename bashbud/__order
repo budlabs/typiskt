@@ -3,6 +3,7 @@ version
 help
 getopt
 envs
+deps
 init
 manpage
 man

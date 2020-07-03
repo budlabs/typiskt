@@ -1,0 +1,13 @@
+---
+target:   ___deps
+markdown: false
+wrap:     50
+...
+%%if dependencies%%
+# dependencies
+%%printf '%s' '__deps=('
+%%for d in dependencies%%
+%%printf ' %s ' 'd'
+%%done%%
+%%printf '%s\n' ')'
+%%fi%%

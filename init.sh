@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.02.5
-updated: 2020-07-02 by budRich
+typiskt - version: 2020.07.03.7
+updated: 2020-07-03 by budRich
 EOB
 }
 
@@ -18,6 +18,10 @@ EOB
 : "${TYPISKT_WORDLIST:=english}"
 : "${TYPISKT_MIN_ACC:=96}"
 : "${TYPISKT_MIN_WPM:=0}"
+
+
+# dependencies
+__deps=( bash  bc  gawk  paste  wc  getopt )
 
 
 ___printhelp(){

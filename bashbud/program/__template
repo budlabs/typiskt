@@ -10,6 +10,7 @@ wrap:     50
 %%cat -v '\(^#!/\)\|\(\s#bashbud$\)' main.sh%%
 %%cat ___help%%
 %%cat -v '\(^#!/\)' lib/*%%
+%%cat ___deps%%
 
 %%cat ___getopt%%
 main "${@}"

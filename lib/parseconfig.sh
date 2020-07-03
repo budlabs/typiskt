@@ -5,6 +5,9 @@ parseconfig() {
   local line re sp ns k v
 
   [[ -f $TYPISKT_CONFIG_DIR/config ]] || {
+
+    checkdependencies
+    
     mkdir -p "$TYPISKT_CONFIG_DIR"/exercises
     cp -rf -t "$TYPISKT_CONFIG_DIR"            \
               "$_sdir/config"                  \

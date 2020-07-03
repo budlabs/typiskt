@@ -7,6 +7,7 @@ wrap:     50
 
 %%cat ___version%%
 %%cat ___envs%%
+%%cat ___deps%%
 %%cat ___help%%
 for ___f in "${___dir}/lib"/*; do
   source "$___f"

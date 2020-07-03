@@ -162,6 +162,11 @@ defaults to: 0
 DEPENDENCIES
 ------------
 `bash`
+`bc`
+`gawk`
+`paste`
+`wc`
+`getopt`
 
 
 

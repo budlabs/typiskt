@@ -14,7 +14,18 @@ After seeing [rr-]'s [10ff] program. I thought it would be fun to try to clone t
 
 If you use **Arch Linux** you can get **typiskt** from [AUR](https://aur.archlinux.org/packages/typiskt/).  
 
-**typiskt** have no dependencies and all you need is the `typiskt` script in your PATH. Use the Makefile to do a systemwide installation of both the script and the manpage.  
+**typiskt** is a **bash** script and the only *external* commands used are:  
+
+- bc - to calculate WPM and accuracy
+- gawk - to create wordlists in `--book` and `--source` mode
+- paste - for vertical concatenation of results/highscore
+- wc - get size of text blocks before centering them
+- tput - get escape codes
+- getopt - long-option support  
+
+If these commands are not installed they should be available in most distributions official package repositories, but you probably already have them.  
+
+Use the Makefile to do a systemwide installation of both the script and the manpage.  
 
 (*configure the installation destination in the Makefile, if needed*)
 

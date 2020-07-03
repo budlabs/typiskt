@@ -1,13 +1,13 @@
 ---
 description: >
   touchtype training for dirt-hackers
-updated:       2020-07-02
-version:       2020.07.02.5
+updated:       2020-07-03
+version:       2020.07.03.7
 author:        budRich
 repo:          https://github.com/budrich/typiskt
 created:       2020-06-08
 license:       bsd-2-clause
-dependencies:  [bash]
+dependencies:  [bash,bc,gawk,paste,wc,getopt]
 see-also:      [https://github.com/rr-/10ff]
 type:          default
 environ:
