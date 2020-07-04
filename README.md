@@ -169,7 +169,11 @@ Show version and exit.
 
 ## updates
 
+### 2020.07.04
+fixed bug with `--list` not actually listing anything.
+
 ### 2020.07.03.2
+
 A bug in
 [go-md2man](https://github.com/cpuguy83/go-md2man/issues/59)
 caused the whole manpage looking like a overthrown table, i
