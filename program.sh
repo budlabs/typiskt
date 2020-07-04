@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.03.30
-updated: 2020-07-03 by budRich
+typiskt - version: 2020.07.04.5
+updated: 2020-07-04 by budRich
 EOB
 }
 
@@ -358,7 +358,7 @@ resize() {
 
 listcorpuses() {
   local d
-  [[ -d "${d:=_sdir/wordlists}" ]] && ls "$d"
+  [[ -d "${d:=$_sdir/wordlists}" ]] && ls "$d"
   exit
 }
 
