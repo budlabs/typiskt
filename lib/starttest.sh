@@ -65,10 +65,10 @@ starttest() {
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
       (( _words++ + _clicks++ ))
-      ((_oldstatus != _statuscorrect && ++_badclicks)) && {
         
+      ((_oldstatus != _statuscorrect && ++_badclicks)) && {
         ((_oldstatus == _statuserror || _activepos == _lastpos)) \
-          || setstatus _statuserror
+          || setstatus "$_statuserror"
 
         sl=${#_string}
         cl=$((sl>_activelength?sl:_activelength))
