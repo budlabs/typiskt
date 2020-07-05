@@ -30,9 +30,11 @@ commands used are:
 
 - wc - get size of text blocks before centering them
 
-- tput - get escape codes
+- tput (ncurses) - get escape codes
 
 - getopt - long-option support  
+- curl - only used in
+[add-gtypist-exercises.sh](./config/add-gtypist-exercises.sh)  
 
 If these commands are not installed they should be
 available in most distributions official package
@@ -172,7 +174,17 @@ Show version and exit.
 
 ## updates
 
+### 2020.07.05
+fixed bug where words didn't get marked as wrong if space
+was pressed before the word was completed.
+
+improved
+[add-gtypist-exercises.sh](./config/add-gtypist-exercises.sh)
+so it orders the exercises from **C** correct, also
+annotated the script with some more comments.
+
 ### 2020.07.04
+
 fixed bug with `--list` not actually listing anything.
 
 ### 2020.07.03.2
@@ -202,20 +214,6 @@ thanks @BachoSeven from issue #7
 
 Updated dependency list, and added checkdependencies()
 function to address issue: #5 (thanks @kattjevfel)
-
-### 2020.07.02.2
-
-improved the make process further, cleaned up repository
-files that will be installed to /etc are located in config
-
-### 2020.07.02
-
-updated makefile, should now work better especially when
-installed with package managers.
-
-### 2020.07.01
-
-initial release
 
 
 [typing_test]: https://github.com/ecly/typing_test
