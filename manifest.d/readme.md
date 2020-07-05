@@ -1,6 +1,8 @@
 # readme_banner
 
-After seeing [rr-]'s [10ff] program. I thought it would be fun to try to clone the same thing in **bash**. I also had some ideas for features i would like to have in a touchtyping tutor, the thing snowballed into what is now typiskt.
+After seeing [rr-]'s [10ff] program. I thought it would be fun to try to clone the same thing in **bash**. I also had some ideas for features i would like to have in a touchtyping tutor, the thing snowballed into what is now typiskt.  
+
+I put a **video** demonstration of **typiskt** on [youtube](https://www.youtube.com/watch?v=miRjG-5puz4)
 
 [rr-]:  https://github.com/rr-
 [10ff]: https://github.com/rr-/10ff
@@ -20,8 +22,9 @@ If you use **Arch Linux** you can get **typiskt** from [AUR](https://aur.archlin
 - gawk - to create wordlists in `--book` and `--source` mode
 - paste - for vertical concatenation of results/highscore
 - wc - get size of text blocks before centering them
-- tput - get escape codes
+- tput (ncurses) - get escape codes
 - getopt - long-option support  
+- curl - only used in [add-gtypist-exercises.sh](./config/add-gtypist-exercises.sh)  
 
 If these commands are not installed they should be available in most distributions official package repositories, but you probably already have them.  
 
