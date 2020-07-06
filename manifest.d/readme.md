@@ -24,7 +24,9 @@ If you use **Arch Linux** you can get **typiskt** from [AUR](https://aur.archlin
 - wc - get size of text blocks before centering them
 - tput (ncurses) - get escape codes
 - getopt - long-option support  
-- curl - only used in [add-gtypist-exercises.sh](./config/add-gtypist-exercises.sh)  
+- curl - only used in [add-gtypist-exercises.sh](./config/add-gtypist-exercises.sh) 
+- md5sum - used for various caching functions.
+- date - to display highscore table  
 
 If these commands are not installed they should be available in most distributions official package repositories, but you probably already have them.  
 
