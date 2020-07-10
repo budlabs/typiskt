@@ -15,5 +15,3 @@ done < <(
               "$_dir/main.sh"              \
               "$_dir/manifest.md"
 )
-
-              # "$_dir"/conf/*               \
