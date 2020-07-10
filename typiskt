@@ -3,8 +3,8 @@
 ___printversion(){
   
 cat << 'EOB' >&2
-typiskt - version: 2020.07.05.12
-updated: 2020-07-05 by budRich
+typiskt - version: 2020.07.10.0
+updated: 2020-07-10 by budRich
 EOB
 }
 
@@ -379,14 +379,16 @@ makelist() {
 
     ( book )
       list=${__o[book]}
-      [[ -f $list ]] || ERX "cannot find $list"
+      [[ -f $list || $list =~ ^/dev/fd ]] \
+        || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
       list=$tmpf
     ;;
 
     ( source )
       list=${__o[source]}
-      [[ -f $list ]] || ERX "cannot find $list"
+      [[ -f $list || $list =~ ^/dev/fd ]] \
+        || ERX "cannot find $list"
       __o[width]=$(wc -L < "$list")
       wordsfromfile "$list" > "$tmpf"
       list=$tmpf
@@ -515,8 +517,6 @@ randomize() {
 
     t=$((${#wordlist[@]}-1))
     g=$((t-_bookmark))
-
-    ERM "g=$g t=$t n=$n"
 
     ((g<n)) && while ((${#words[@]}<n)); do
       if ((t<n)); then
