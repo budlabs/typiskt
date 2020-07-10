@@ -25,8 +25,6 @@ randomize() {
     t=$((${#wordlist[@]}-1))
     g=$((t-_bookmark))
 
-    ERM "g=$g t=$t n=$n"
-
     ((g<n)) && while ((${#words[@]}<n)); do
       if ((t<n)); then
         eval "words+=({$t..0})"
