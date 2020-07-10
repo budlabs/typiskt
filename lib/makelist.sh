@@ -17,14 +17,16 @@ makelist() {
 
     ( book )
       list=${__o[book]}
-      [[ -f $list ]] || ERX "cannot find $list"
+      [[ -f $list || $list =~ ^/dev/fd ]] \
+        || ERX "cannot find $list"
       wordsfromfile "$list" > "$tmpf"
       list=$tmpf
     ;;
 
     ( source )
       list=${__o[source]}
-      [[ -f $list ]] || ERX "cannot find $list"
+      [[ -f $list || $list =~ ^/dev/fd ]] \
+        || ERX "cannot find $list"
       __o[width]=$(wc -L < "$list")
       wordsfromfile "$list" > "$tmpf"
       list=$tmpf
