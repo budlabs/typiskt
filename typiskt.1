@@ -1,33 +1,48 @@
 .nh
 .TH TYPISKT 1 2020\-07\-10 Linux "User Manuals"
 .SH NAME
-.PP
-\fB\fCtypiskt\fR \- touchtype training for dirt\-hackers
-
+.B typiskt
+\- touchtype training for dirt\-hackers
+.
 .SH SYNOPSIS
-.PP
-.RS
-
-.nf
-typiskt [\-\-corpus|\-c WORDLIST] [\-\-difficulty|\-d INT] [\-\-time|\-t SECONDS] [\-\-width|\-w WIDTH] [\-\-seed|\-s INT]
-typiskt \-\-book|\-b TEXTFILE [\-\-difficulty|\-d INT] [\-\-time|\-t SECONDS] [\-\-width|\-w WIDTH]
-typiskt \-\-source|\-u TEXTFILE [\-\-width|\-w WIDTH]
-typiskt \-\-exercise|\-e EXERCISE [\-\-width|\-w WIDTH]
-typiskt \-\-list|\-l
-typiskt \-\-help|\-h
-typiskt \-\-version|\-v
-
-.fi
-.RE
-
+.SY typiskt
+.B \-h
+.
+.SY typiskt
+.B \-v
+.
+.SY typiskt
+.OP \-c WORDLIST
+.OP \-d INT
+.OP \-t SECONDS
+.OP \-w WIDTH
+.OP \-s INT
+.
+.SY typiskt
+.OP \-b TEXTFILE
+.OP \-d INT
+.OP \-t SECONDS
+.OP \-w WIDTH
+.
+.SY typiskt
+.OP \-u TEXTFILE
+.OP \-w WIDTH
+.
+.SY typiskt
+.OP \-e EXERCISE
+.OP \-w WIDTH
+.
+.SY typiskt
+.B \-l
+.
 .SH DESCRIPTION
 .PP
-You will get a different type of test depending
-on which mode you start \fBtypiskt\fP in. No matter
-which mode you can press Escape to
-restart the test, and Ctrl+c
-to quit.
-
+You will get a different type of test depending on which mode you start
+.B typiskt
+in.
+No matter which mode you can press Escape to restart the test,
+and Ctrl+c to quit.
+.
 .TS
 allbox;
 l l l l l l l l 
@@ -37,191 +52,221 @@ words	x	x	x				x
 book		x	x	x			x
 source					x		exercise						x	
 .TE
-
+.
 .SS words
 .PP
-This is the default mode and it will use words
-taken from a corpus and show them in a random
-order, the test will stop when the time is up. If
-time was more then 60 seconds, the "score" will
-get recorded. The default corpus is \fIenglish\fP, but
-it can be changed to any corpus listed with
-\fB\fC\-\-list\fR, using the \fB\fC\-\-corpus\fR options. If
-\fB\fC\-\-difficulty\fR is set, some words will have a
-random \fIwordmask\fP applied to them making the test
-more difficult, difficulty will also add some
-bonus point to the high score.
-
+This is the default mode.
+It will use words taken from a corpus and
+show them in a random order.
+The test will stop when the time is up.
+If time was more then 60 seconds, the "score" will get recorded.
+The default corpus is
+.IR english ,
+but it can be changed to any corpus listed with
+.BR \-\-list ,
+using the
+.B \-\-corpus
+options.
+If
+.BR \-\-difficulty
+is set, some words will have a random
+.I wordmask
+applied to them making the test more difficult.
+Difficulty will also add some bonus point to the high score.
+.
 .SS book
 .PP
-This is very similar to the words mode, except
-the words are taken from a specific textfile (the
-argument to \fB\fC\-\-book\fR) and will be displayed in
-chronological order. It will also record the word
-the test ended on, so if a new test is started
-with the same text, it will resume on that word
-(\fBbookmark\fP).
-
+This is very similar to the words mode,
+except the words are taken from a specific textfile
+(the argument to
+.BR \-\-book )
+and will be displayed in chronological order.
+It will also record the word the test ended on.
+So if a new test is started with the same text,
+it will resume on that word
+.RB ( bookmark ).
+.
 .SS source
 .PP
-Will also print words in chronological order from
-a specific file (the argument to \fB\fC\-\-source\fR)  but
-unlike \fBbook mode\fP it will respect Line\-breaks.
-time limit, bookmark and difficulty is disabled
-for this mode. It is intended for (short) snippets
-of source code. The highest WPM for the file will
-be stored and displayed when the test is
-completed.
-
+Will also print words in chronological order from a specific file
+(the argument to
+.BR \-\-source ).
+But unlike
+.B book
+mode, it will respect line\-breaks.
+Time limit, bookmark and difficulty are disabled for this mode.
+It is intended for (short) snippets of source code.
+The highest WPM for the file will be stored and
+displayed when the test is completed.
+.
 .SS exercise
 .PP
-The argument to \fB\fC\-\-exercise\fR must be the name of
-a subdirectory in
-\fBTYPISKT\_CONFIG\_DIR/exercises\fP\&. That
-subdirectory in turn is expected to contain one or
-more wordlists (files with one word/line). The
-content of these wordlists will be displayed in
-chronological order. And to proceed to the next
-exercise/wordlist (sorted in numerical order with
-\fB\fCsort \-n\fR) a certain WPM and accuracy must be
-reached (the values can be changed in
-\fBTYPISKT\_CONFIG\_DIR/config\fP). You can navigate
-between \fBcompleted\fP exercises with the
-Arrow keys in this mode. No exercises
-is included with the installation, but the script:
-\fB\fCTYPISKT\_CONFIG\_DIR/exercises/add\-gtypist\-exercises.sh\fR
-will download, convert and install the default
-English exercises from [gtypist].
-
+The argument to
+.B \-\-exercise
+must be the name of a subdirectory in
+.BR TYPISKT_CONFIG_DIR/exercises .
+That subdirectory in turn is expected to contain
+one or more wordlists (files with one word/line).
+The content of these wordlists
+will be displayed in chronological order.
+To proceed to the next exercise/wordlist
+(sorted in numerical order with
+.BR "sort \-n" ),
+a certain WPM and accuracy must be reached
+(the values can be changed in
+.BR TYPISKT_CONFIG_DIR/config ).
+You can navigate between
+.B completed
+exercises with the Arrow keys in this mode.
+No exercises is included with the installation,
+but the script:
+.B TYPISKT_CONFIG_DIR/exercises/add\-gtypist\-exercises.sh
+will download, convert and install
+the default English exercises from
+.BR gtypist .
+.
 .SH OPTIONS
-.PP
-\fB\fC\-\-corpus\fR|\fB\fC\-c\fR WORDLIST
-.br
-changes WORDLIST to use in the default
-(\fBwords\fP) mode. Defaults to \fIenglish\fP\&. This
-value can also be set in
-\fB\fCTYPISKT\_CONFIG\_DIR/config\fR or with the
-environment variable \fBTYPISKT\_WORDLIST\fP\&.
-
-.PP
-\fB\fC\-\-difficulty\fR|\fB\fC\-d\fR INT
-.br
-INT must be a number 0\-10, the higher the
-difficulty the more often a wordmask will be
-applied to words in modes that supports
-\fB\fC\-\-difficulty\fR (words|book).
-
-.PP
-\fB\fC\-\-time\fR|\fB\fC\-t\fR SECONDS
-.br
-Number of seconds a test will last in modes that
-supports \fB\fC\-\-time\fR (words|book). Defaults to 60.
-
-.PP
-\fB\fC\-\-width\fR|\fB\fC\-w\fR WIDTH
-.br
-Maximum width in columns for lines. Defaults to:
-\fB\fCmin(50,COLUMNS\-2)\fR
-
-.PP
-\fB\fC\-\-seed\fR|\fB\fC\-s\fR INT
-.br
-Seed to be used for RANDOM. Defaults to \fB\fC$(od \-An
-\-N3 \-i /dev/random)\fR
-
-.PP
-\fB\fC\-\-book\fR|\fB\fC\-b\fR TEXTFILE
-.br
-Sets mode to \fBbook\fP and uses TEXTFILE as a
-wordlist.
-
-.PP
-\fB\fC\-\-source\fR|\fB\fC\-u\fR TEXTFILE
-.br
-Sets mode to \fBsource\fP and uses TEXTFILE as a
-wordlist.
-
-.PP
-\fB\fC\-\-exercise\fR|\fB\fC\-e\fR EXERCISE
-.br
-Sets mode to \fBexercise\fP and looks in
-\fBTYPISKT\_CONFIG\_DIR/exercises/EXERCISE\fP for
-files to generate wordlists.
-
-.PP
-\fB\fC\-\-list\fR|\fB\fC\-l\fR
-.br
-List available wordlists in \fBWORDLIST\_DIR\fP
-(defaults to \fB\fC/usr/share/typiskt/wordlist\fR or
-\fB\fCSCRIPTDIR/wordlists\fR).
-
-.PP
-\fB\fC\-\-help\fR|\fB\fC\-h\fR
-.br
+.TP
+.BI \-\-corpus \fR, " \-c " WORDLIST
+Changes
+.I WORDLIST
+to use in the default
+.RB ( words )
+mode.
+This value can also be set in
+.B TYPISKT_CONFIG_DIR/config
+or with the environment variable
+.BR TYPISKT_WORDLIST .
+Defaults to
+.IR english .
+.
+.TP
+.BI \-\-difficulty \fR, " \-d " INT
+.I INT
+Must be a number
+.IR 0\-10 .
+The higher the difficulty the more often
+a wordmask will be applied to words in modes that supports
+.B \-\-difficulty
+.RB ( words | book ).
+.
+.TP
+.BI \-\-time \fR, " \-t " SECONDS
+Number of seconds a test will last in modes that supports
+.B \-\-time
+.RB ( words | book ).
+Defaults to
+.IR 60 .
+.
+.TP
+.BI \-\-width \fR, " \-w " WIDTH
+Maximum width in columns for lines.
+Defaults to
+.IR min(50,COLUMNS\-2) .
+.
+.TP
+.BI \-\-seed \fR, " \-s " INT
+Seed to be used for
+.IR RANDOM .
+Defaults to
+.IR "$(od \-An \-N3 \-i /dev/random)" .
+.
+.TP
+.BI \-\-book \fR, " \-b " TEXTFILE
+Sets mode to
+.B book
+and uses
+.I TEXTFILE
+as a wordlist.
+.
+.TP
+.BI \-\-source \fR, " \-u " TEXTFILE
+Sets mode to
+.B source
+and uses
+.I TEXTFILE
+as a wordlist.
+.
+.TP
+.BI \-\-exercise \fR, " \-e " EXERCISE
+Sets mode to
+.B exercise
+and looks in
+.BI TYPISKT_CONFIG_DIR/exercises/ EXERCISE
+for files to generate wordlists.
+.
+.TP
+.BR \-\-list ", " \-l
+List available wordlists in
+.BR WORDLIST_DIR .
+(defaults to
+.I /usr/share/typiskt/wordlist
+or
+.IR SCRIPTDIR/wordlists ).
+.
+.TP
+.BR \-\-help ", " \-h
 Show help and exit.
-
-.PP
-\fB\fC\-\-version\fR|\fB\fC\-v\fR
-.br
+.
+.TP
+.BR \-\-version ", " \-v
 Show version and exit.
-
+.
 .SH ENVIRONMENT
-.PP
-\fB\fCXDG\_CONFIG\_HOME\fR
+.TP
+.B XDG_CONFIG_HOME
+Defaults to
+.IR $HOME/.config .
+.
+.TP
+.B TYPISKT_CONFIG_DIR
+Defaults to
+.IR $XDG_CONFIG_HOME/typiskt .
+.
+.TP
+.B TYPISKT_CACHE
+Defaults to
+.IR $HOME/.cache/typiskt .
+.
+.TP
+.B TYPISKT_TIME_FORMAT
+Defaults to
+.IR \[dq]%y/%m/%d\[dq] .
+.
+.TP
+.B TYPISKT_WIDTH
+Defaults to
+.IR 50 .
 
-.PP
-defaults to: $HOME/.config
-
-.PP
-\fB\fCTYPISKT\_CONFIG\_DIR\fR
-
-.PP
-defaults to: $XDG\_CONFIG\_HOME/typiskt
-
-.PP
-\fB\fCTYPISKT\_CACHE\fR
-
-.PP
-defaults to: $HOME/.cache/typiskt
-
-.PP
-\fB\fCTYPISKT\_TIME\_FORMAT\fR
-
-.PP
-defaults to: "%y/%m/%d"
-
-.PP
-\fB\fCTYPISKT\_WIDTH\fR
-
-.PP
-defaults to: 50
-
-.PP
-\fB\fCTYPISKT\_WORDLIST\fR
-
-.PP
-defaults to: english
-
-.PP
-\fB\fCTYPISKT\_MIN\_ACC\fR
-
-.PP
-defaults to: 96
-
-.PP
-\fB\fCTYPISKT\_MIN\_WPM\fR
-
-.PP
-defaults to: 0
+.TP
+.B TYPISKT_WORDLIST
+Defaults to
+.IR english .
+.
+.TP
+.B TYPISKT_MIN_ACC
+Defaults to
+.IR 96 .
+.
+.TP
+.B TYPISKT_MIN_WPM
+Defaults to
+.IR 0 .
 
 .SH DEPENDENCIES
-.PP
-\fB\fCbash\fR \fB\fCbc\fR \fB\fCgawk\fR \fB\fCpaste\fR \fB\fCwc\fR \fB\fCgetopt\fR
-
-.PP
-budRich https://github.com/budrich/typiskt
-\[la]https://github.com/budrich/typiskt\[ra]
-
+.BR bash (1),
+.BR bc (1),
+.BR gawk (1),
+.BR paste (1),
+.BR wc (1),
+.BR getopt (1).
+.
+.SH AUTHOR
+budRich
+.UR https://github.com/budrich/typiskt
+.UE
+.
 .SH SEE ALSO
-.PP
-https://github.com/rr\-/10ff,
+10ff
+.UR https://github.com/rr\-/10ff
+.UE
