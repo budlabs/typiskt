@@ -1,3 +1,4 @@
+'\" t
 .nh
 .TH TYPISKT 1 2020\-07\-10 Linux "User Manuals"
 .SH NAME
@@ -44,13 +45,16 @@ No matter which mode you can press Escape to restart the test,
 and Ctrl+c to quit.
 .
 .TS
-allbox;
-l l l l l l l l 
-l l l l l l l l .
-\fB\fCmode\fR	\fB\fCRandom\fR	\fB\fCDifficulty\fR	\fB\fCTimed\fR	\fB\fCBookmark\fR	\fB\fCLine\-break\fR	\fB\fCSeries\fR	\fB\fCHighscore\fR
-words	x	x	x				x
-book		x	x	x			x
-source					x		exercise						x	
+allbox center tab(,) nospaces;
+lb ce ce ce ce .
+mode       ,words,book,source,exercise
+Random     ,x    ,    ,      ,
+Difficulty ,x    ,x   ,      ,
+Timed      ,x    ,x   ,      ,
+Bookmark   ,     ,x   ,      ,
+Line\-break,     ,    ,x     ,
+Series     ,     ,    ,      ,x
+Highscore  ,x    ,x   ,      ,
 .TE
 .
 .SS words
