@@ -1,67 +1,3 @@
-# typiskt - terminal touch typing training
-After seeing [rr-]'s [10ff] program. I thought it
-would be fun to try to clone the same thing
-in **bash**. I also had some ideas for features i
-would like to have in a touchtyping tutor, the
-thing snowballed into what is now typiskt.  
-
-I put a **video** demonstration of **typiskt** on
-[youtube]
-
-## installation
-
-If you use **Arch Linux** you can get **typiskt**
-from [AUR]. 
-
-**typiskt** is a **bash** script and the
-  only *external* commands used are:  
-
-- bc - to calculate WPM and accuracy
-- gawk - to create wordlists in `--book` and `--source` mode
-- paste - for vertical concatenation of results/highscore
-- wc - get size of text blocks before centering them
-- tput (ncurses) - get escape codes
-- getopt - long-option support  
-- curl - only used in [add-gtypist-exercises.sh]
-- md5sum - used for various caching functions.
-- date - to display highscore table  
-
-If these commands are not installed they should be
-available in most distributions official package
-repositories, but you probably already have
-them. 
-
-Use the Makefile to do a systemwide installation
-of both the script and the manpage.  
-
-Build dependencies are\*: **gawk**, GNU make, and bash
-
-(*configure the installation destination in the Makefile, if needed*)  
-\* *to re-build the manpage `go-md2man` is needed*
-
-```
-$ git clone https://github.com/budlabs/typiskt.git
-$ cd typiskt
-$ make
-# make install
-$ typiskt -v
-typiskt - version: 2020.06.22.1
-updated: 2020-06-22 by budRich
-```
-
-## usage
-    typiskt [OPTIONS]
-    -b, --book       TEXTFILE | book mode, TEXTFILE used for wordlist
-    -c, --corpus     WORDLIST | changes WORDLIST to use in the default (words) mode
-    -d, --difficulty INT      | INT == a number 0-10. only avialble in words|book-modes
-    -e, --exercise   EXERCISE | exercise from: TYPISKT_CONFIG_DIR/exercises/EXERCISE
-    -h, --help                | print help and exit  
-    -l, --list                | list available wordlists
-    -s, --seed       INT      | use INT as seed for RANDOM
-    -u, --source     TEXTFILE | source mode, use TEXTFILE as wordlist
-    -t, --time       SECONDS  | set time limit in seconds for the tests
-    -v, --version             | print version info and exit  
-    -w, --width      WIDTH    | maximum number of characters per line
 
 You get a different type of test depending on
 which mode, you start **typiskt** in. No matter
@@ -133,20 +69,4 @@ script:
 `TYPISKT_CONFIG_DIR/exercises/add-gtypist-exercises.sh`
 will download, convert and install the default
 English exercises from [gtypist].
-
-
-
-
-## license
-
-**typiskt** is licensed under **[BSD-2-Clause](LICENSE)**  
-
-
-[typing_test]: https://github.com/ecly/typing_test
-[epbud2txt]: https://github.com/kevinboone/epub2txt2
-[youtube]: https://www.youtube.com/watch?v=miRjG-5puz4
-[rr-]:  https://github.com/rr-
-[10ff]: https://github.com/rr-/10ff
-[AUR]: https://aur.archlinux.org/packages/typiskt/
-[add-gtypist-exercises.sh]: ./config/add-gtypist-exercises.sh
 

@@ -1,0 +1,5 @@
+changes WORDLIST to use in the default (words) mode
+
+Defaults to english. This value can also be set
+in TYPISKT_CONFIG_DIR/config or with the
+environment variable TYPISKT_WORDLIST.
