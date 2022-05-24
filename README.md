@@ -34,9 +34,10 @@ them.
 Use the Makefile to do a systemwide installation
 of both the script and the manpage.  
 
-Build dependencies are: **gawk**, GNU make, lowdown and bash
+Build dependencies are\*: **gawk**, GNU make, and bash
 
-(*configure the installation destination in the Makefile, if needed*)
+(*configure the installation destination in the Makefile, if needed*)  
+\* *to re-build the manpage `go-md2man` is needed*
 
 ```
 $ git clone https://github.com/budlabs/typiskt.git

@@ -9,7 +9,7 @@ CONTACT      := https://github.com/budlabs/typiskt
 USAGE        := $(NAME) [OPTIONS]
 LICENSE      := BSD-2-Clause
 
-CUSTOM_TARGETS += README.md
+# CUSTOM_TARGETS += README.md
 
 README_DEPS =                       \
 	$(DOCS_DIR)/readme_banner.md      \
