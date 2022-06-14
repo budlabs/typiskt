@@ -9,8 +9,6 @@ CONTACT      := https://github.com/budlabs/typiskt
 USAGE        := $(NAME) [OPTIONS]
 LICENSE      := BSD-2-Clause
 
-# CUSTOM_TARGETS += README.md
-
 README_DEPS =                       \
 	$(DOCS_DIR)/readme_banner.md      \
 	$(DOCS_DIR)/readme_install.md     \
@@ -41,12 +39,11 @@ MANPAGE_DEPS =                       \
 	$(DOCS_DIR)/manpage_environment.md \
 	$(CACHE_DIR)/copyright.txt
 
-# CUSTOM_TARGETS += $(MANPAGE_OUT)
-MANPAGE_OUT = $(MANPAGE)
+MANPAGE := $(NAME).1
 .PHONY: manpage
-manpage: $(MANPAGE_OUT)
+manpage: $(MANPAGE)
 
-$(MANPAGE_OUT): config.mak $(MANPAGE_DEPS) 
+$(MANPAGE): config.mak $(MANPAGE_DEPS) 
 	@$(info making $@)
 	uppercase_name=$(NAME)
 	uppercase_name=$${uppercase_name^^}
@@ -84,15 +81,16 @@ SHRDIR  ?= $(DESTDIR)$(PREFIX)/share
 
 ASSETDIR = $(SHRDIR)/$(NAME)
 
-installed_manpage    = $(DESTDIR)$(PREFIX)/share/man/man$(manpage_section)/$(MANPAGE)
 installed_script    := $(DESTDIR)$(PREFIX)/bin/$(NAME)
 installed_license   := $(DESTDIR)$(PREFIX)/share/licenses/$(NAME)/LICENSE
+installed_manpage   := \
+	$(DESTDIR)$(PREFIX)/share/man/man$(subst .,,$(suffix $(MANPAGE)))/$(MANPAGE)
 
 _$(NAME).out: $(MONOLITH)
 	m4 -DETC_CONFIG_DIR=$(PREFIX)/share/$(NAME) $< >$@
 
 install: _$(NAME).out all
-	install -Dm644 $(MANPAGE_OUT) $(installed_manpage)
+	install -Dm644 $(MANPAGE) $(installed_manpage)
 	install -Dm755 _$(NAME).out $(installed_script)
 	install -Dm644 LICENSE $(installed_license)
 	install -Dm755 config/exercises/add-gtypist-exercises.sh  -t $(ASSETDIR)/exercises
