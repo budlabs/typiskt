@@ -3,7 +3,7 @@
 starttest() {
 
   local key c1 c2 exd
-  declare -i lasttime=-1 status sl cl
+  declare -i lasttime=-1 status sl cl is_cheating
 
   _clicks=0  _badclicks=0 _words=0 _start=0 _activepos=-1 _resize=0
   _string=""
@@ -48,6 +48,11 @@ starttest() {
     
     # https://stackoverflow.com/a/46481173
     IFS= read -rsn1 key || continue
+
+    [[ $is_cheating ]] && {
+      unset -v is_cheating
+      op="\e[$_height;0H$blank${_c[rc]}${_c[norm]}"
+    }
 
     # any graphical character
     if [[ $key =~ [[:graph:]] ]]; then
@@ -109,9 +114,8 @@ starttest() {
               nextex=$((_lastexercise+1<${#exercises[@]}
                        ?_lastexercise+1:0))
             else
-              echo -en "${_c[civis]}${_c[sc]}\e[$_height;0H${_c[f1]}NO CHEATING${_c[res]}"
-              read -rsn 1
-              echo -en "\e[$_height;0H$blank${_c[rc]}${_c[norm]}"
+              op+="${_c[civis]}${_c[sc]}\e[$_height;0H${_c[f1]}NO CHEATING${_c[res]}"
+              is_cheating=1
               continue
             fi
           ;;
