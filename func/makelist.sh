@@ -67,6 +67,7 @@ makelist() {
   esac
 
   [[ -f $list ]] || ERX "cannot find $list"
+  _file_words_source=$list
   _listhash=$(md5sum "$list" | cut -f1 -d' ')
   mapfile -t wordlist < "$list"
   # cat "$tmpf" > /home/bud/git/bud/src/new/typisktstart/op
