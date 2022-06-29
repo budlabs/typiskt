@@ -19,7 +19,7 @@ FILE_EXT            := .sh
 INDENT              := $(shell echo -e "  ")
 USAGE                = $(NAME) [OPTIONS]
 OPTIONS_FILE        := options
-MONOLITH             = _$(NAME)$(FILE_EXT)
+MONOLITH             = _$(NAME)
 BASE                := _init$(FILE_EXT)
 SHBANG              := \#!/bin/bash
 OPTIONS_ARRAY_NAME  := _o
@@ -112,9 +112,9 @@ $(BASE): $(getopt) $(print_help) $(print_version) $(CACHE_DIR)/got_func
 		printf '%s\n' '$(SHBANG)' '' 
 
 		[[ -f $${pv:=$(print_version)} ]] \
-			&& grep -vhE -e '^#!/' $(print_version) | sed '0,/2/s//3/'
+			&& grep -vhE -e '^#!/' $(print_version) | sed '0,/2/s//$$\{__stderr:-2\}/'
 		[[ -f $${ph:=$(print_help)} ]] \
-			&& grep -vhE -e '^#!/' $(print_help)    | sed '0,/2/s//3/'
+			&& grep -vhE -e '^#!/' $(print_help)    | sed '0,/2/s//$$\{__stderr:-2\}/'
 
 		echo
 
