@@ -1,5 +1,5 @@
 .nh
-.TH TYPISKT  1 2022-05-15 budlabs "User Manuals"
+.TH TYPISKT   2022-07-30 budlabs "User Manuals"
 .SH NAME
 .PP
 typiskt - terminal touch typing training
@@ -9,10 +9,11 @@ typiskt - terminal touch typing training
 .RS
 
 .nf
-typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
-typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
-typiskt --source|-u TEXTFILE [--width|-w WIDTH]
-typiskt --exercise|-e EXERCISE [--width|-w WIDTH]
+typiskt [--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--lines LINES] [--seed|-s INT]
+typiskt --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--lines LINES]
+typiskt --source|-u TEXTFILE [--width|-w WIDTH] [--lines LINES]
+typiskt --exercise|-e EXERCISE [--width|-w WIDTH] [--lines LINES]
+typiskt --details
 typiskt --list|-l
 typiskt --help|-h
 typiskt --version|-v
@@ -106,9 +107,11 @@ English exercises from [gtypist].
 .nf
 -b, --book       TEXTFILE | book mode, TEXTFILE used for wordlist
 -c, --corpus     WORDLIST | changes WORDLIST to use in the default (words) mode
+--details                 | write details to TYPISKT_CACHE/details/EPOCHSECONDS
 -d, --difficulty INT      | INT == a number 0-10. only avialble in words|book-modes
 -e, --exercise   EXERCISE | exercise from: TYPISKT_CONFIG_DIR/exercises/EXERCISE
 -h, --help                | print help and exit  
+--lines          LINES    | display max LINES  
 -l, --list                | list available wordlists
 -s, --seed       INT      | use INT as seed for RANDOM
 -u, --source     TEXTFILE | source mode, use TEXTFILE as wordlist
@@ -132,7 +135,7 @@ $XDG_CONFIG_HOME/typiskt
 
 .SS TYPISKT_CACHE
 .PP
-$HOME/.cache/typiskt
+$XDG_CACHE_HOME/typiskt
 
 .SS TYPISKT_TIME_FORMAT
 .PP
@@ -141,6 +144,10 @@ $HOME/.cache/typiskt
 .SS TYPISKT_WIDTH
 .PP
 50
+
+.SS TYPISKT_LINES
+.PP
+2
 
 .SS TYPISKT_WORDLIST
 .PP
