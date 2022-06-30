@@ -1,7 +1,7 @@
-[--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--seed|-s INT]
---book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH]
---source|-u TEXTFILE [--width|-w WIDTH]
---exercise|-e EXERCISE [--width|-w WIDTH]
+[--corpus|-c WORDLIST] [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--lines LINES] [--seed|-s INT]
+--book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--lines LINES]
+--source|-u TEXTFILE [--width|-w WIDTH] [--lines LINES]
+--exercise|-e EXERCISE [--width|-w WIDTH] [--lines LINES]
 --list|-l
 --help|-h
 --version|-v
