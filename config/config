@@ -17,6 +17,11 @@ status-color-active = 3
 # if max-width > COLUMNS-2, max-width=COLUMNS-2
 maxwidth = 50
 
+# can also be set with --lines commandline option
+# or environment variable TYPISKT_LINES
+# number of lines to previes
+lines = 2
+
 # can also be set with environment variable TYPISKT_CACHE
 # path where to store chache files like highscores
 cache-dir = ~/.cache/typiskt

@@ -25,13 +25,14 @@ parseconfig() {
     case "$k" in
       default-wordlist          ) TYPISKT_WORDLIST=$v      ;;
       maxwidth                  ) TYPISKT_WIDTH=$v         ;;
+      lines                     ) TYPISKT_LINES=$v         ;;
       cache-dir                 ) TYPISKT_CACHE=${v/'~'/~} ;;
       highscore-time-format     ) TYPISKT_TIME_FORMAT=$v   ;;
       exercise-minimum-accuracy ) TYPISKT_MIN_ACC=$v       ;;
       exercise-minimum-wpm      ) TYPISKT_MIN_WPM=$v       ;;
-      status-color-error        ) _statuserror=$v         ;;
-      status-color-correct      ) _statuscorrect=$v       ;;
-      status-color-active       ) _statusactive=$v        ;;
+      status-color-error        ) _statuserror=$v          ;;
+      status-color-correct      ) _statuscorrect=$v        ;;
+      status-color-active       ) _statusactive=$v         ;;
     esac
 
   } ; done < "$TYPISKT_CONFIG_DIR/config"
