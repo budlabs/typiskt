@@ -61,7 +61,8 @@ starttest() {
       [[ $key = "$nextchar" ]] && status=$_oldstatus \
                                || status=$_statuserror
       
-      ((++_clicks && status == _statuserror && _badclicks++))
+      ((++_clicks && status == _statuserror && _badclicks++ && _o[details])) \
+        && _details_keys+=",$nextchar:$key"
 
     # space, submit word (empty $key == Enter)
     elif [[ $key = " " || -z $key ]]; then
@@ -73,10 +74,15 @@ starttest() {
 
         sl=${#_string}
         cl=$((sl>_activelength?sl:_activelength))
+
         for ((i=0;i<cl;i++)); do
           c1=${_string:$i:1} c2=${_activeword:$i:1}
           [[ $c1 = "$c2" ]] || ((_badclicks++))
         done
+
+        [[ ${_o[details]} && $_string != "$_activeword" ]] \
+          && _details_words=",$_activeword:$_string"
+        
       }
       nextword
       continue

@@ -2,6 +2,7 @@
 --book|-b TEXTFILE [--difficulty|-d INT] [--time|-t SECONDS] [--width|-w WIDTH] [--lines LINES]
 --source|-u TEXTFILE [--width|-w WIDTH] [--lines LINES]
 --exercise|-e EXERCISE [--width|-w WIDTH] [--lines LINES]
+--details
 --list|-l
 --help|-h
 --version|-v
