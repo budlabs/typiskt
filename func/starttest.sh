@@ -26,12 +26,13 @@ starttest() {
     op+="    "
   }
   
+  resize
+
   # when linebreaks are used, a new list have to be
   # generated each game
   ((_prop & m[linebreak])) && makelist
 
   randomize
-  makeline
   setline
   nextword
   ((_time)) && timer
@@ -130,7 +131,7 @@ starttest() {
       }
 
       # pressing escape alone will restart the game
-      return  
+      return
     else
       continue
     fi

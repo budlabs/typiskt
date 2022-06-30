@@ -9,8 +9,6 @@ cleanup() {
   # therefor testing existence of _tmpE (ERR.sh)
   [[ -f $_tmpE ]] && {
 
-
-    ERM arnolds
     ((_gotscreen)) && {
       # clear out standard input
       read -rt 0.001 && cat </dev/stdin>/dev/null

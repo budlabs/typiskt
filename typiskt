@@ -5,6 +5,7 @@
 : "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 : "${TYPISKT_WIDTH:=50}"
+: "${TYPISKT_LINES:=2}"
 : "${TYPISKT_WORDLIST:=english}"
 : "${TYPISKT_MIN_ACC:=96}"
 : "${TYPISKT_MIN_WPM:=0}"
@@ -41,7 +42,7 @@ main() {
   declare -i _time _t _oldstatus _bookmark
   declare -i _restart=1 _clicks=0 _badclicks=0
   declare -i _seed _lastexercise _start _gotscreen=0
-  declare -i _underlinewidth=14 _resize=0 
+  declare -i _underlinewidth=14 _resize=0 _number_of_lines
   declare -i _statuserror _statuscorrect _statusactive
 
   declare -g _details_keys _details_words
@@ -51,7 +52,8 @@ main() {
   declare -a wordlist   # wordlist as array
   declare -a words      # ${wordlist[${words[-1]}]}=next
   declare -a wordmasks  # specialsfile as array
-  declare -a nextline activeline
+  declare -a activeline
+  declare -a lines
 
   declare -A pos
   declare -A _c
@@ -60,6 +62,7 @@ main() {
     _c[f$k]=$(tput setaf "$k")
     _c[b$k]=$(tput setab "$k")
   done
+
   _c[res]=$(tput sgr0)
   _c[sc]=$(tput sc)
   _c[rc]=$(tput rc)
@@ -69,7 +72,7 @@ main() {
   : "${_seed:=${_o[seed]:-$(od -An -N3 -i /dev/random)}}"
   RANDOM=$_seed
 
-  declare -A m # mask array
+  declare -A m # prop mask array
   masks=(random difficulty time bookmark linebreak loop)
   for ((i=0;i<${#masks[@]};i++)); do 
     m[${masks[$i]}]=$((1<<i))

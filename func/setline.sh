@@ -1,40 +1,39 @@
 #!/bin/bash
 
 setline() {
-  # copies nextline to activeline
-  # call makeline to create new nextline
-  # clear both old lines and print the two new ones
 
-  local k
+  local i tmpY x_position line_length word
 
-  unset 'activeline[@]'
-  for k in "${!nextline[@]}"; do
-    activeline[$k]=${nextline[$k]}
-    _lastpos=$k
+  for ((i=0;i<_number_of_lines;i++)); do
+    [[ ${lines[i+1]} ]] || makeline "$((i+1))"
+    lines[i]=${lines[i+1]}
+    tmpY=$((pos[aY]+i))
+    op+="\e[$tmpY;0H$blank\e[$tmpY;0H$_activeindent${lines[$i]}"
   done
 
+  unset 'lines[-1]'
+  unset 'activeline[@]'
+
+  for word in ${lines[0]}; do
+    ((line_length+=${#word}+1))
+    x_position=$(( line_length-(${#word}+1) ))
+    activeline[x_position]=$word
+  done
+
+  _lastpos=$x_position
   _nextpos=0
-  makeline
-
-  op+="\e[${pos[aY]};0H$blank\n${blank}\e[${pos[aY]};0H"
-  op+="$_activeindent${activeline[*]}\n"
-  op+="$_activeindent${nextline[*]}"
-
 }
 
 makeline() {
 
-  # creates new nextline array
-  # add words to array, as long as they fit in _maxW
+  declare -i ll j position=$1
+  local w wln
 
-  declare -i ll wl j
-  local w
-
-  unset 'nextline[@]'
+  unset 'lines[$position]'
 
   while ((${#words[@]})); do
     wln=${words[-1]}
-    w=${wordlist[${words[-1]}]}
+    w=${wordlist[$wln]}
 
     ((_difficulty)) && {
 
@@ -59,15 +58,12 @@ makeline() {
       break
     }
 
-    wl=${#w}
+    (( (ll+=(${#w}+1)) < _maxW || _prop & m[linebreak])) || break
 
-    (( (ll+=(wl+1)) < _maxW || _prop & m[linebreak])) || break
-
-    # index in array is also xposition
-    nextline+=([$((ll-(wl+1)))]="$w")
-
+    lines[$position]+="$w "
     unset 'words[-1]'
 
   done
 
+  lines[$position]="${lines[$position]% }"
 }
