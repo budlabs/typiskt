@@ -90,8 +90,8 @@ results() {
       score=${score%.*}
 
       block=$(
-        printf 'WPM:      %6.2f\n' "$wpm"
-        printf 'accuracy:%6.1f%% ' "$acc"
+        LC_NUMERIC=C printf 'WPM:      %6.2f\n' "$wpm"
+        LC_NUMERIC=C printf 'accuracy:%6.1f%% ' "$acc"
         echo -ne "(${_c[f2]}$clicksum${_c[res]}"
         echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
       )

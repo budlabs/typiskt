@@ -23,7 +23,7 @@ highscore() {
       if [[ -n ${tt[$i]} ]]; then
         c=${tt[$i]#* } ct=${c#* } cs=${c% *}
         ((ct == t)) && echo -en "*${_c[b2]}" || echo -n " "
-        printf '%6.2f ' "$cs"
+        LC_NUMERIC=C printf '%6.2f ' "$cs"
         echo -n "$(date -d @"$ct" +"$TYPISKT_TIME_FORMAT")"
         ((ct == t)) && echo -ne "${_c[res]}"
         echo "${_c[f4]}▕${_c[res]}"
