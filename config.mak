@@ -1,8 +1,8 @@
 NAME         := typiskt
 DESCRIPTION  := terminal touch typing training
 CREATED      := 2020-06-08
-UPDATED      := 2022-05-24
-VERSION      := 2022.05.24.1
+UPDATED      := 2022-07-30
+VERSION      := 2022.07.30.1
 AUTHOR       := budRich
 ORGANISATION := budlabs
 CONTACT      := https://github.com/budlabs/typiskt
