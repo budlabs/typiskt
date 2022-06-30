@@ -1,8 +1,9 @@
 #!/bin/bash
 
 : "${XDG_CONFIG_HOME:=$HOME/.config}"
+: "${XDG_CACHE_HOME:=$HOME/.cache}"
 : "${TYPISKT_CONFIG_DIR:=$XDG_CONFIG_HOME/typiskt}"
-: "${TYPISKT_CACHE:=$HOME/.cache/typiskt}"
+: "${TYPISKT_CACHE:=$XDG_CACHE_HOME/typiskt}"
 : "${TYPISKT_TIME_FORMAT:="%y/%m/%d"}"
 : "${TYPISKT_WIDTH:=50}"
 : "${TYPISKT_LINES:=2}"
