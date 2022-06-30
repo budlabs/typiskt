@@ -95,9 +95,12 @@ results() {
         echo -ne "(${_c[f2]}$clicksum${_c[res]}"
         echo -e  "|${_c[f1]}$_badclicks${_c[res]})"
       )
+      
+      ep=$EPOCHSECONDS
 
+      ((_o[details])) && details_file
+       
       if ((_time >= 60)); then
-        ep=$EPOCHSECONDS
         hs=$(highscore "$wpm" "$score" "$ep")
         grep '\*' <<< "$hs" >/dev/null && \
           msg="A winner is (You)!"$'\n\n'

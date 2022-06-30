@@ -44,6 +44,9 @@ main() {
   declare -i _underlinewidth=14 _resize=0 
   declare -i _statuserror _statuscorrect _statusactive
 
+  declare -g _details_keys _details_words
+  declare -g _file_words_source
+
   declare -a exercises
   declare -a wordlist   # wordlist as array
   declare -a words      # ${wordlist[${words[-1]}]}=next
