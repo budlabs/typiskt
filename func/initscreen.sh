@@ -16,7 +16,6 @@ resize() {
   local margin=2 padding=2 needed=3
   local layout layout_height tmpH tmpW
 
-  _winch=0
   read -r tmpH tmpW < <(stty size)
 
   ((_height == tmpH && _width == tmpW)) && return  
