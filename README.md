@@ -5,6 +5,8 @@ in **bash**. I also had some ideas for features i
 would like to have in a touchtyping tutor, the
 thing snowballed into what is now typiskt.  
 
+[![asciicast](https://asciinema.org/a/506751.svg)](https://asciinema.org/a/506751)
+
 I put a **video** demonstration of **typiskt** on
 [youtube]
 
@@ -53,9 +55,11 @@ updated: 2020-06-22 by budRich
     typiskt [OPTIONS]
     -b, --book       TEXTFILE | book mode, TEXTFILE used for wordlist
     -c, --corpus     WORDLIST | changes WORDLIST to use in the default (words) mode
+    --details                 | write details to TYPISKT_CACHE/details/EPOCHSECONDS
     -d, --difficulty INT      | INT == a number 0-10. only avialble in words|book-modes
     -e, --exercise   EXERCISE | exercise from: TYPISKT_CONFIG_DIR/exercises/EXERCISE
     -h, --help                | print help and exit  
+    --lines          LINES    | display max LINES  
     -l, --list                | list available wordlists
     -s, --seed       INT      | use INT as seed for RANDOM
     -u, --source     TEXTFILE | source mode, use TEXTFILE as wordlist
