@@ -9,6 +9,7 @@ highscore() {
     tmp=$(mktemp)
 
     mkdir -p "${f%/*}"
+    [[ -L $f ]] && f=$(readlink -f "$f")
 
     [[ -n $wpm ]] && {
       echo "$score $wpm $t" >> "$f"
