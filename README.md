@@ -1,3 +1,5 @@
+# MAINTAINED AT https://git.budlabs.xyz/bud/typiskt
+
 # typiskt - terminal touch typing training
 After seeing [rr-]'s [10ff] program. I thought it
 would be fun to try to clone the same thing
